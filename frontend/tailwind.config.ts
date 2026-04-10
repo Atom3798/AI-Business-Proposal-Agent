@@ -1,27 +1,72 @@
 import type { Config } from "tailwindcss";
+import animate from "tailwindcss-animate";
 
 export default {
   content: ["./index.html", "./src/**/*.{ts,tsx}"],
   theme: {
     extend: {
-      colors: {
-        ink: "#09090f",
-        panel: "#11131b",
-        soft: "#171a23",
-        accent: "#ff6b2c"
-      },
       fontFamily: {
-        heading: ["Switzer", "ui-sans-serif", "system-ui"],
-        body: ["Geist", "ui-sans-serif", "system-ui"]
+        sora: ["Sora", "sans-serif"]
       },
-      boxShadow: {
-        premium: "0 20px 80px rgba(17, 24, 39, 0.45)"
+      colors: {
+        background: "hsl(var(--background))",
+        foreground: "hsl(var(--foreground))",
+        primary: {
+          DEFAULT: "hsl(var(--primary))",
+          foreground: "hsl(var(--primary-foreground))"
+        },
+        secondary: {
+          DEFAULT: "hsl(var(--secondary))",
+          foreground: "hsl(var(--secondary-foreground))"
+        },
+        muted: {
+          DEFAULT: "hsl(var(--muted))",
+          foreground: "hsl(var(--muted-foreground))"
+        },
+        accent: {
+          DEFAULT: "hsl(var(--accent))",
+          foreground: "hsl(var(--accent-foreground))"
+        },
+        destructive: {
+          DEFAULT: "hsl(var(--destructive))",
+          foreground: "hsl(var(--destructive-foreground))"
+        },
+        border: "hsl(var(--border))",
+        input: "hsl(var(--input))",
+        ring: "hsl(var(--ring))",
+        "nav-button": "hsl(var(--nav-button))",
+        "hero-bg": "hsl(var(--hero-bg))"
       },
-      backgroundImage: {
-        "mesh-dark":
-          "radial-gradient(circle at top, rgba(255, 120, 43, 0.12), transparent 34%), radial-gradient(circle at 20% 20%, rgba(204, 204, 255, 0.15), transparent 30%), linear-gradient(180deg, #05060a 0%, #090b10 100%)"
+      borderRadius: {
+        lg: "var(--radius)",
+        md: "calc(var(--radius) - 2px)",
+        sm: "calc(var(--radius) - 4px)"
+      },
+      keyframes: {
+        "fade-up": {
+          "0%": {
+            opacity: "0",
+            transform: "translateY(20px)"
+          },
+          "100%": {
+            opacity: "1",
+            transform: "translateY(0)"
+          }
+        },
+        "fade-in": {
+          "0%": {
+            opacity: "0"
+          },
+          "100%": {
+            opacity: "1"
+          }
+        }
+      },
+      animation: {
+        "fade-up": "fade-up 0.6s ease-out forwards",
+        "fade-in": "fade-in 0.4s ease-out forwards"
       }
     }
   },
-  plugins: []
+  plugins: [animate]
 } satisfies Config;

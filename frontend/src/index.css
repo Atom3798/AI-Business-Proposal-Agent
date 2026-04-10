@@ -1,44 +1,60 @@
-@import url("https://api.fontshare.com/v2/css?f[]=switzer@500,600,700&display=swap");
-@import url("https://fonts.cdnfonts.com/css/geist");
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  color-scheme: dark;
+@layer base {
+  :root {
+    --background: 0 0% 10%;
+    --foreground: 0 0% 96%;
+    --primary: 119 99% 46%;
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 18%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 16%;
+    --muted-foreground: 0 0% 60%;
+    --accent: 119 99% 46%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 96%;
+    --border: 0 0% 20%;
+    --input: 0 0% 20%;
+    --ring: 119 99% 46%;
+    --radius: 0.5rem;
+    --nav-button: 0 0% 18%;
+    --hero-bg: 0 0% 8%;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-hero-bg text-foreground font-sora;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  * {
+    @apply border-border;
+  }
 }
 
-html {
-  scroll-behavior: smooth;
+@layer components {
+  .nav-cta {
+    @apply inline-flex items-center justify-center rounded-lg bg-nav-button text-foreground px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all hover:bg-nav-button/80 active:scale-[0.97];
+  }
+
+  .hero-button {
+    @apply px-6 py-3 md:px-8 md:py-4 text-sm rounded-sm cursor-pointer transition-all active:scale-[0.97] font-bold shadow-lg hover:shadow-xl;
+  }
+
+  .hero-button-primary {
+    @apply hero-button bg-primary text-primary-foreground hover:brightness-125 hover:-translate-y-0.5 active:shadow-md;
+  }
+
+  .hero-button-secondary {
+    @apply hero-button bg-white text-background hover:brightness-95 hover:-translate-y-0.5 active:shadow-md;
+  }
 }
 
-body {
-  margin: 0;
-  min-width: 320px;
-  background: #05060a;
-  color: #f4f7fb;
-  font-family: "Geist", ui-sans-serif, system-ui;
-}
 
-* {
-  box-sizing: border-box;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-input,
-textarea,
-select {
-  font: inherit;
-}
-
-.hero-grid {
-  background-image: linear-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 80px 80px;
-}
