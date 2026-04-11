@@ -1,176 +1,86 @@
 # AI Business Generator
 
-AI Business Generator is a focused frontend project built with React, Vite, TypeScript, and Tailwind CSS. It lets users enter a startup idea and generates a polished mock business plan UI with sections for positioning, personas, competition, monetization, MVP scope, go-to-market strategy, and pitch structure.
+AI Business Generator is a professional full-stack project (originally frontend-only) that transforms a simple startup idea into a comprehensive, investor-ready business plan using a modular Generative AI pipeline.
 
-Frontend (v2) - Completely Redesigned
+## 🚀 Recent Project Progress (Updates by Joseph Bae)
 
-The frontend has been massively upgraded with **production-ready features**:
+Joseph has officially transitioned the project from a frontend prototype to a functional full-stack application. Key updates completed today include:
 
-### ✨ New Features
-- **Professional Landing Page** - Hero, features, testimonials, CTA
-- **Enhanced Form** - Step-by-step guidance, better UX
-- **Plan History** - Save unlimited plans locally via localStorage
-- **Advanced Viewer** - Tabbed interface with copy/export
-- **Multiple Exports** - Text, JSON, clipboard
-- **Responsive Design** - Mobile, tablet, desktop, 4K
-- **Smooth Animations** - 60fps with motion/react
-- **Type-Safe** - Full TypeScript coverage
+- **Full Backend Scaffolding**: Initialized a modular Python/FastAPI backend architecture to handle robust AI processing.
+- **AI Prompt-Chaining Pipeline**: Engineered a sophisticated, multi-step LLM orchestration layer that generates 7 detailed business plan sections sequentially.
+- **Core Concept Extraction Logic**: Implemented an extraction layer to distill raw user ideas into clean, structured business data for more accurate results.
+- **Async LLM Service Integration**: Wired up the OpenAI API with an asynchronous service to ensure smooth, non-blocking plan generation for a better user experience.
+- **Full-Stack Connectivity Prep**: Configured CORS and middleware to allow secure communication between the existing React frontend and new FastAPI backend.
 
-📖 See [UPGRADE_SUMMARY.md](./UPGRADE_SUMMARY.md) for complete details on 1000x improvements.
 
-See [FRONTEND_IMPROVEMENTS.md](./FRONTEND_IMPROVEMENTS.md) for technical breakdown.
+
 
 ## Tech Stack
 
-- React 18
-- Vite
-- TypeScript
-- Tailwind CSS
-- `motion/react` - Animations
-- `lucide-react` - Icons
-- localStorage - Data persistence
+- **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, `motion/react`, `lucide-react`
+- **Backend**: Python 3.10+, FastAPI, Uvicorn, OpenAI GPT-4o
+- **Persistence**: `localStorage` (current) and MongoDB (planned)
 
 ## Project Structure
 
 ```text
 .
-├── frontend/                    # Main app
+├── backend/                    # FastAPI Backend
+│   ├── app/
+│   │   ├── api/                # API Endpoints
+│   │   ├── models/             # Data Validation
+│   │   └── services/           # LLM Orchestration & Prompts
+│   ├── requirements.txt
+│   └── main.py
+├── frontend/                    # React Frontend
 │   ├── src/
-│   │   ├── components/         # 15+ reusable components
-│   │   ├── pages/              # Main application page
-│   │   ├── utils/              # Storage, export utilities
-│   │   ├── App.tsx
-│   │   ├── main.tsx
-│   │   └── index.css
+│   │   ├── components/         # UI Components
+│   │   ├── pages/              # Main application views
+│   │   └── utils/              # Export & Storage logic
 │   ├── package.json
 │   └── tsconfig.json
 ├── package.json                 # Monorepo root
+├── PROGRESS.md                  # Project tracking
 └── README.md                    # This file
 ```
 
 ## Quick Start
 
+### Backend Setup
 ```bash
-git clone https://github.com/Atom3798/AI-Business-Proposal-Agent.git
-cd AI-Business-Proposal-Agent
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+# Add your OPENAI_API_KEY to a .env file
+uvicorn app.main:app --reload
+```
+
+### Frontend Setup
+```bash
+cd frontend
 npm install
-npm install --workspace frontend
-npm run dev --workspace frontend
+npm run dev
 ```
-
-Open `http://localhost:5173`.
-
-## Available Scripts
-
-From the repo root:
-
-```bash
-npm run dev          # Start development server
-npm run build        # Production build
-npm run lint         # TypeScript check
-```
-
-Or directly in the frontend workspace:
-
-```bash
-npm run dev --workspace frontend
-npm run build --workspace frontend
-npm run lint --workspace frontend
-```
-
-## Key Components
-
-### Landing Page
-- **Navbar** - Navigation and branding
-- **Hero** - Main CTA with stats
-- **Features** - 6 key features showcase
-- **Testimonials** - Social proof
-- **CTA** - Additional call-to-action
-- **Footer** - Links and info
-
-### Application
-- **EnhancedForm** - Step-by-step input form
-- **PlanViewer** - Tabbed plan display
-- **PlanHistory** - Saved plans dashboard
-- **LoadingState** - Generation feedback
-
-### Utilities
-- **storage.ts** - localStorage management
-- **export.ts** - Text/JSON export functions
-
-## Features
-
-### Currently Available
-- Generate 7-section business plans
-- Save unlimited plans locally
-- View plan history
-- Copy sections to clipboard
-- Export as text or JSON
-- Responsive design
-- Dark mode
-- Smooth animations
-
-### Coming Soon (Phase 2)
-- Real LLM API integration
-- PDF export
-- Plan editing
-- Email sharing
-- Plan templates
-- User authentication
-- Cloud sync
-
-## Data Persistence
-
-Plans are automatically saved to localStorage with:
-- Unique ID
-- Auto-generated title
-- Original inputs
-- Generated business plan
-- Creation/update timestamps
-
-Access your plans anytime without losing data!
-
-## Backend Integration
-
-Ready for backend connection. To integrate:
-
-1. Replace mock `buildMockPlan()` in `BusinessGeneratorPage.tsx`
-2. Add API endpoint call in `handleSubmit()`
-3. Connect to real LLM backend
-4. Update loading states for streaming
-5. Handle errors gracefully
-
-The frontend architecture is designed for seamless backend integration with:
-- Clean data models
-- Type-safe API layer
-- Error boundaries ready
-- Loading states prepared
-
-## Performance
-
-- Initial Load: < 2s
-- Build Size: ~310KB (gzip: ~99KB)
-- Animations: 60fps
-- Mobile Optimized: Yes
-
-## Browser Support
-
-- Chrome 90+
-- Firefox 88+
-- Safari 14+
-- Edge 90+
 
 ## Contributing
 
-This is part of a team project. Frontend improvements by the Frontend & UX team. Backend LLM pipeline by the Backend team.
+We welcome contributions from the team! To ensure a smooth development process, please follow these guidelines:
 
-### Development Process
-1. Create feature branch
-2. Make changes
-3. Test locally (`npm run dev`)
-4. Verify build (`npm run build`)
-5. Check types (`npm run lint`)
-6. Submit PR
+### How to Contribute
+1. **Report Bugs**: If you find an issue, please open an Issue with steps to reproduce it.
+2. **Feature Requests**: Have an idea for a new feature? Suggest it in the Issues section.
+3. **Pull Requests**:
+    - Fork the repository and create a new feature branch.
+    - Keep changes focused and descriptive.
+    - Ensure your code follows the existing style and is well-commented (focused on context/intent).
+    - Verify that both the frontend (`npm run lint`) and backend still function correctly.
+    - Submit your PR with a clear summary of what was changed and why.
+
+### Team Roles
+- **Frontend & UX**: UI design, interactive forms, and data visualization.
+- **Backend & LLM**: Prompt engineering, API development, and pipeline orchestration.
+- **Evaluation & Integration**: Testing, validation, and performance monitoring.
 
 ## Documentation
 
@@ -184,10 +94,15 @@ MIT (Add your license here)
 
 ## Team
 
-This is a collaborative project:
-- **Frontend & UX**: Building the interface you see
-- **Backend & LLM**: Processing ideas into plans
-- **Evaluation & Integration**: Testing and validation
+This is a collaborative capstone project:
+- **Joseph Bae**: Full-Stack & AI Pipeline
+    - **Frontend & UX**: Lead UI/UX design and multi-step interaction logic.
+    - **Full-Stack Scaffolding**: Initialized the modular FastAPI backend architecture and CORS middleware.
+    - **AI Prompt-Chaining**: Engineered the sophisticated, multi-step LLM orchestration layer for 7 detailed sections.
+    - **LLM Pipeline**: Integrated the asynchronous OpenAI service to handle non-blocking plan generation.
+    - **Core Concept Extraction**: Implemented logic to distill raw startup ideas into structured, actionable business data.
+- **Teammate 1**: Backend & LLM Pipeline | Prompt Engineering, API Integration, and Refinement Logic.
+- **Teammate 2**: Evaluation & System Integration | Testing, Validation, and Performance Monitoring.
 
 ---
 
