@@ -1,6 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
-from app.models.schema import GenerateRequest, GnerateResponse
+from app.models.schema import GenerateRequest, GenerateResponse
 from app.services.llm_service import generate_business_plan
 import os
 
@@ -28,7 +28,7 @@ async def root():
 async def health_check():
     return {"status": "healthy"}
 
-@app.post("/generate", response_model=GnerateResponse)
+@app.post("/generate", response_model=GenerateResponse)
 async def generate(request: GenerateRequest):
     """Accepts a start up idea and returns a generated business plan."""
     try:
@@ -36,7 +36,7 @@ async def generate(request: GenerateRequest):
             startup_idea=request.startup_idea,
             target_audience=request.target_audience,
             industry=request.industry,
-            unique_differentiator=request.unique_differentiators,
+            unique_differentiator=request.unique_differentiator,
             refine=request.refine
         )
         return plan
