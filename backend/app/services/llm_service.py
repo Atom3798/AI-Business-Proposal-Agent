@@ -1,3 +1,4 @@
+import asyncio
 import json
 from openai import AsyncOpenAI
 import os
@@ -37,36 +38,45 @@ async def call_llm(prompt: str, json_mode: bool = True) -> str:
         print(f"Error calling LLM: {e}")
         raise
 
-async def generate_business_plan(startup_idea: str, target_audience: str = "", industry: str = "", unique_differentiator: str = "") -> dict:
+async def generate_business_plan(startup_idea: str, 
+                                 target_audience: str = "", 
+                                 industry: str = "", 
+                                 unique_differentiator: str = "",
+                                 refine: bool = False) -> dict:
     """This function orchestrates the prompt chain, building the plan piece by piece based on the user's idea."""
     
-    # We start by distilling the raw user input into a clean core concept that the other prompts can build on.
+    # 1. Extract core concept first, everything else depends on this step.
     extraction_input = EXTRACTION_PROMPT.format(
         startup_idea=startup_idea,
         target_audience=target_audience,
         industry=industry,
         unique_differentiator=unique_differentiator
     )
-    core_concept_json = await call_llm(extraction_input, response_format={"type": "json_object"})
+    core_concept_json = await call_llm(extraction_input)
     core_concept = json.loads(core_concept_json)
     core_concept_str = json.dumps(core_concept, indent=2)
 
-    # With the core concept ready, we can now generate the individual sections of the business plan.
-    # While these run one after another right now, we could later run them in parallel to speed things up.
-    
-    val_prop_json = await call_llm(VALUE_PROPOSITION_PROMPT.format(core_concept=core_concept_str), response_format={"type": "json_object"})
-    personas_json = await call_llm(CUSTOMER_PERSONAS_PROMPT.format(core_concept=core_concept_str), response_format={"type": "json_object"})
-    competitors_json = await call_llm(COMPETITIVE_ANALYSIS_PROMPT.format(core_concept=core_concept_str), response_format={"type": "json_object"})
-    revenue_json = await call_llm(REVENUE_MODEL_PROMPT.format(core_concept=core_concept_str), response_format={"type": "json_object"})
-    mvp_json = await call_llm(MVP_FEATURES_PROMPT.format(core_concept=core_concept_str), response_format={"type": "json_object"})
-    
-    # The GTM strategy relies on the personas we just created to ensure the acquisition channels make sense.
+    # 2. Run 5 independent calls in parallel since these can be generated simultaneously.
+    (
+        val_prop_json,
+        personas_json,
+        competitors_json,
+        revenue_json,
+        mvp_json
+    ) = await asyncio.gather(
+        call_llm(VALUE_PROPOSITION_PROMPT.format(core_concept=core_concept_str)),
+        call_llm(CUSTOMER_PERSONAS_PROMPT.format(core_concept=core_concept_str)),
+        call_llm(COMPETITIVE_ANALYSIS_PROMPT.format(core_concept=core_concept_str)),
+        call_llm(REVENUE_MODEL_PROMPT.format(core_concept=core_concept_str)),
+        call_llm(MVP_FEATURES_PROMPT.format(core_concept=core_concept_str))
+    )
+
+    # 3. GTM Strategy depends on the personas from step 2
     gtm_json = await call_llm(
-        GTM_STRATEGY_PROMPT.format(core_concept=core_concept_str, personas=personas_json), 
-        response_format={"type": "json_object"}
+        GTM_STRATEGY_PROMPT.format(core_concept=core_concept_str, personas=personas_json)
     )
     
-    # Finally, we use everything we've generated to build a cohesive pitch deck outline.
+    # 4. Compile everything into a single plan object to return to the user.
     pitch_deck_json = await call_llm(
         PITCH_DECK_PROMPT.format(
             value_prop=val_prop_json,
@@ -75,11 +85,9 @@ async def generate_business_plan(startup_idea: str, target_audience: str = "", i
             revenue=revenue_json,
             mvp=mvp_json,
             gtm=gtm_json
-        ), 
-        response_format={"type": "json_object"}
+        )
     )
 
-    # We pack all the generated parts into a single dictionary to return to the frontend.
     draft_plan = {
         "core_concept": core_concept,
         "value_proposition": json.loads(val_prop_json),
@@ -91,9 +99,10 @@ async def generate_business_plan(startup_idea: str, target_audience: str = "", i
         "pitch_deck": json.loads(pitch_deck_json)
     }
 
-    # We can eventually pass the entire draft through a refinement prompt to polish any inconsistencies.
-    # refinement_input = REFINEMENT_PROMPT.format(draft_plan=json.dumps(draft_plan, indent=2))
-    # refined_plan_json = await call_llm(refinement_input, response_format={"type": "json_object"})
-    # final_plan = json.loads(refined_plan_json)
+    # 5. Optional refinement pass for consistency and polish, if the user requested it.
+    if refine:
+        refinement_input = REFINEMENT_PROMPT.format(draft_plan=json.dumps(draft_plan, indent=2))
+        refinded_plan = await call_llm(refinement_input)
+        return json.loads(refinded_plan)
 
     return draft_plan
