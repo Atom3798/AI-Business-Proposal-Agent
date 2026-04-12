@@ -2,15 +2,25 @@
 
 AI Business Generator is a professional full-stack project (originally frontend-only) that transforms a simple startup idea into a comprehensive, investor-ready business plan using a modular Generative AI pipeline.
 
-## 🚀 Recent Project Progress (Updates by Joseph Bae)
+## 🚀 Recent Project Progress
 
-Joseph has officially transitioned the project from a frontend prototype to a functional full-stack application. Key updates completed today include:
+### Updates by Joseph Bae
+Joseph officially transitioned the project from a frontend prototype to a functional full-stack application. Key updates include:
 
 - **Full Backend Scaffolding**: Initialized a modular Python/FastAPI backend architecture to handle robust AI processing.
 - **AI Prompt-Chaining Pipeline**: Engineered a sophisticated, multi-step LLM orchestration layer that generates 7 detailed business plan sections sequentially.
 - **Core Concept Extraction Logic**: Implemented an extraction layer to distill raw user ideas into clean, structured business data for more accurate results.
 - **Async LLM Service Integration**: Wired up the OpenAI API with an asynchronous service to ensure smooth, non-blocking plan generation for a better user experience.
 - **Full-Stack Connectivity Prep**: Configured CORS and middleware to allow secure communication between the existing React frontend and new FastAPI backend.
+
+### Updates by Joseph Esquivel
+Joseph Esquivel completed the backend/LLM integration layer, connecting the pipeline to a live API endpoint. Key updates include:
+
+- **Pydantic Request/Response Models**: Defined typed `GenerateRequest` and `GenerateResponse` models in `app/models/schema.py` for input validation and automatic API documentation.
+- **Live `/generate` Endpoint**: Wired up the `POST /generate` route in `main.py`, exposing the full business plan pipeline to the frontend with proper error handling.
+- **Parallel LLM Execution**: Refactored `generate_business_plan()` to run five independent pipeline sections concurrently using `asyncio.gather()`, reducing generation time significantly.
+- **Optional Refinement Pass**: Added a `refine` flag to the request model allowing an optional final consistency-check LLM pass to polish the full plan before returning it.
+- **Environment Variable Loading**: Added `load_dotenv()` to ensure the API key is properly loaded from `.env` at startup.
 
 
 
