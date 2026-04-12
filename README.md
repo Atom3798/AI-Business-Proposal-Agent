@@ -101,7 +101,7 @@ This is a collaborative capstone project:
     - **AI Prompt-Chaining**: Engineered the sophisticated, multi-step LLM orchestration layer for 7 detailed sections.
     - **LLM Pipeline**: Integrated the asynchronous OpenAI service to handle non-blocking plan generation.
     - **Core Concept Extraction**: Implemented logic to distill raw startup ideas into structured, actionable business data.
-- **Teammate 1**: Backend & LLM Pipeline | Prompt Engineering, API Integration, and Refinement Logic.
+- **Joseph Esquivel**: Backend & LLM Pipeline | Prompt Engineering, API Integration, and Refinement Logic.
 - **Teammate 2**: Evaluation & System Integration | Testing, Validation, and Performance Monitoring.
 
 ---
