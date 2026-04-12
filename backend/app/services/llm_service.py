@@ -17,26 +17,25 @@ from app.services.prompts import (
 # We're using the async OpenAI client to handle requests without blocking the rest of our app.
 client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-async def call_llm(prompt: str, response_format: dict = None) -> str:
-    """This helper handles the actual API call to OpenAI, keeping the model and settings consistent."""
+async def call_llm(prompt: str, json_mode: bool = True) -> str:
+    """Handles the OpenAI API call, forces a structured JSON response"""
     try:
         kwargs = {
-            "model": "gpt-4o", 
+            "model": "gpt-4o",
             "messages": [
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {"role": "user", "content": prompt}
             ],
             "temperature": 0.7,
         }
-        
-        if response_format:
-             kwargs["response_format"] = {"type": "json_object"}
+        if json_mode:
+            kwargs["response_format"] = {"type": "json_object"}
 
         response = await client.chat.completions.create(**kwargs)
         return response.choices[0].message.content
     except Exception as e:
-        print(f"Something went wrong with the LLM call: {e}")
-        raise e
+        print(f"Error calling LLM: {e}")
+        raise
 
 async def generate_business_plan(startup_idea: str, target_audience: str = "", industry: str = "", unique_differentiator: str = "") -> dict:
     """This function orchestrates the prompt chain, building the plan piece by piece based on the user's idea."""
