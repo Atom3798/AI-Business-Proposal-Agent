@@ -1,5 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from app.models.schema import GenerateRequest, GnerateResponse
+from app.services.llm_service import generate_business_plan
 import os
 
 app = FastAPI(
@@ -25,3 +27,18 @@ async def root():
 @app.get("/health")
 async def health_check():
     return {"status": "healthy"}
+
+@app.post("/generate", response_model=GnerateResponse)
+async def generate(request: GenerateRequest):
+    """Accepts a start up idea and returns a generated business plan."""
+    try:
+        plan = await generate_business_plan(
+            startup_idea=request.startup_idea,
+            target_audience=request.target_audience,
+            industry=request.industry,
+            unique_differentiator=request.unique_differentiators,
+            refine=request.refine
+        )
+        return plan
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Plan generation failed: {str(e)}")
