@@ -2,118 +2,70 @@ import { Navbar } from "../components/Navbar";
 
 export default function ContactsPage() {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="shell-page">
       <Navbar />
-      
-      <section className="pt-32 px-6 md:px-16 max-w-6xl mx-auto pb-20">
-        <div className="animate-fade-in">
-          <h1 className="text-5xl md:text-6xl font-bold text-foreground mb-6">
-            Get In Touch
-          </h1>
-          <p className="text-xl text-muted-foreground mb-12">
-            Have questions? We'd love to hear from you
-          </p>
 
-          <div className="grid md:grid-cols-2 gap-12 mt-12">
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground mb-8">
-                Contact Information
-              </h2>
-              
-              <div className="space-y-8">
-                <div>
-                  <h3 className="text-primary font-semibold mb-2">Email</h3>
-                  <p className="text-muted-foreground">
-                    <a href="mailto:hello@aigenerator.com" className="hover:text-foreground transition">
-                      hello@aigenerator.com
-                    </a>
-                  </p>
-                </div>
+      <section className="page-hero">
+        <span className="eyebrow">Reach Out</span>
+        <h1 className="section-title mt-4">Contact</h1>
+        <p className="section-copy mt-5 max-w-3xl">
+          The contact page now follows the same visual system as the rest of the product and uses calmer forms and information panels.
+        </p>
 
-                <div>
-                  <h3 className="text-primary font-semibold mb-2">Support</h3>
-                  <p className="text-muted-foreground">
-                    <a href="mailto:support@aigenerator.com" className="hover:text-foreground transition">
-                      support@aigenerator.com
-                    </a>
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-primary font-semibold mb-2">Phone</h3>
-                  <p className="text-muted-foreground">+1 (555) 123-4567</p>
-                </div>
-
-                <div>
-                  <h3 className="text-primary font-semibold mb-2">Location</h3>
-                  <p className="text-muted-foreground">
-                    San Francisco, CA<br />
-                    USA
-                  </p>
-                </div>
-
-                <div>
-                  <h3 className="text-primary font-semibold mb-4">Follow Us</h3>
-                  <div className="flex gap-4">
-                    {["Twitter", "LinkedIn", "GitHub"].map((social) => (
-                      <a
-                        key={social}
-                        href="#"
-                        className="text-muted-foreground hover:text-foreground transition"
-                      >
-                        {social}
-                      </a>
-                    ))}
-                  </div>
-                </div>
+        <div className="mt-12 grid gap-6 md:grid-cols-[0.9fr_1.1fr]">
+          <div className="panel p-8">
+            <h2 className="text-2xl font-semibold text-foreground">Contact information</h2>
+            <div className="mt-6 space-y-6 text-sm leading-7 text-muted-foreground">
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-accent">Email</p>
+                <a href="mailto:hello@aigenerator.com" className="mt-2 block text-foreground hover:text-accent">
+                  hello@aigenerator.com
+                </a>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-accent">Support</p>
+                <a href="mailto:support@aigenerator.com" className="mt-2 block text-foreground hover:text-accent">
+                  support@aigenerator.com
+                </a>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-[0.24em] text-accent">Location</p>
+                <p className="mt-2 text-foreground">San Francisco, California</p>
               </div>
             </div>
-
-            <div>
-              <h2 className="text-2xl font-semibold text-foreground mb-8">
-                Send us a Message
-              </h2>
-              
-              <form className="space-y-6">
-                <div>
-                  <label className="block text-sm text-muted-foreground mb-2">
-                    Name
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-4 py-2 bg-secondary/20 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary transition"
-                    placeholder="Your name"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-muted-foreground mb-2">
-                    Email
-                  </label>
-                  <input
-                    type="email"
-                    className="w-full px-4 py-2 bg-secondary/20 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary transition"
-                    placeholder="you@example.com"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-sm text-muted-foreground mb-2">
-                    Message
-                  </label>
-                  <textarea
-                    rows={5}
-                    className="w-full px-4 py-2 bg-secondary/20 border border-border rounded-lg text-foreground focus:outline-none focus:border-primary transition resize-none"
-                    placeholder="Your message here..."
-                  />
-                </div>
-
-                <button type="submit" className="hero-button-primary w-full">
-                  Send Message
-                </button>
-              </form>
-            </div>
           </div>
+
+          <form className="panel p-8">
+            <h2 className="text-2xl font-semibold text-foreground">Send a message</h2>
+            <div className="mt-6 space-y-5">
+              {[
+                { label: "Name", type: "text", placeholder: "Your name" },
+                { label: "Email", type: "email", placeholder: "you@example.com" }
+              ].map((field) => (
+                <div key={field.label}>
+                  <label className="mb-2 block text-sm text-muted-foreground">{field.label}</label>
+                  <input
+                    type={field.type}
+                    placeholder={field.placeholder}
+                    className="w-full rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-foreground outline-none transition focus:border-cyan-200/40 focus:ring-2 focus:ring-cyan-200/15"
+                  />
+                </div>
+              ))}
+
+              <div>
+                <label className="mb-2 block text-sm text-muted-foreground">Message</label>
+                <textarea
+                  rows={6}
+                  placeholder="How can we help?"
+                  className="w-full resize-none rounded-2xl border border-white/10 bg-slate-950/40 px-4 py-3 text-foreground outline-none transition focus:border-cyan-200/40 focus:ring-2 focus:ring-cyan-200/15"
+                />
+              </div>
+
+              <button type="submit" className="hero-button-primary w-full">
+                Send message
+              </button>
+            </div>
+          </form>
         </div>
       </section>
     </div>

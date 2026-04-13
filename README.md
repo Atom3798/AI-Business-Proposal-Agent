@@ -116,7 +116,7 @@ This is a collaborative capstone project:
 
 ---
 
-**Status**: ✅ Frontend v2 Production Ready | ⏳ Awaiting Backend Integration
+**Status**: Frontend v2 Production Ready | waiting Backend Integration
 
 **Next Step**: Backend team connects real LLM endpoint to generate live business plans!
 

@@ -4,24 +4,24 @@
 
 @layer base {
   :root {
-    --background: 0 0% 10%;
-    --foreground: 0 0% 96%;
-    --primary: 119 99% 46%;
-    --primary-foreground: 0 0% 4%;
-    --secondary: 0 0% 18%;
-    --secondary-foreground: 0 0% 96%;
-    --muted: 0 0% 16%;
-    --muted-foreground: 0 0% 60%;
-    --accent: 119 99% 46%;
-    --accent-foreground: 0 0% 4%;
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 96%;
-    --border: 0 0% 20%;
-    --input: 0 0% 20%;
-    --ring: 119 99% 46%;
-    --radius: 0.5rem;
-    --nav-button: 0 0% 18%;
-    --hero-bg: 0 0% 8%;
+    --background: 210 31% 11%;
+    --foreground: 106 52% 96%;
+    --primary: 180 51% 36%;
+    --primary-foreground: 210 31% 11%;
+    --secondary: 210 26% 16%;
+    --secondary-foreground: 106 52% 96%;
+    --muted: 211 22% 20%;
+    --muted-foreground: 191 28% 74%;
+    --accent: 186 38% 76%;
+    --accent-foreground: 210 31% 11%;
+    --destructive: 0 70% 58%;
+    --destructive-foreground: 106 52% 96%;
+    --border: 212 19% 24%;
+    --input: 212 19% 24%;
+    --ring: 180 51% 36%;
+    --radius: 0.75rem;
+    --nav-button: 180 51% 36%;
+    --hero-bg: 210 31% 11%;
   }
 
   html {
@@ -29,9 +29,13 @@
   }
 
   body {
-    @apply bg-hero-bg text-foreground font-sora;
+    @apply bg-hero-bg text-foreground font-sans;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    background-image:
+      radial-gradient(circle at top left, rgba(45, 139, 139, 0.18), transparent 32%),
+      radial-gradient(circle at top right, rgba(168, 218, 220, 0.09), transparent 24%),
+      linear-gradient(180deg, #0f1c26 0%, #13222f 45%, #101820 100%);
   }
 
   * {
@@ -41,20 +45,51 @@
 
 @layer components {
   .nav-cta {
-    @apply inline-flex items-center justify-center rounded-lg bg-nav-button text-foreground px-6 py-3 text-xs font-bold uppercase tracking-widest transition-all hover:bg-nav-button/80 active:scale-[0.97];
+    @apply inline-flex items-center justify-center rounded-full bg-primary px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.24em] text-primary-foreground transition-all hover:brightness-110 active:scale-[0.97];
   }
 
   .hero-button {
-    @apply px-6 py-3 md:px-8 md:py-4 text-sm rounded-sm cursor-pointer transition-all active:scale-[0.97] font-bold shadow-lg hover:shadow-xl;
+    @apply rounded-full px-6 py-3 text-sm font-semibold transition-all active:scale-[0.98];
   }
 
   .hero-button-primary {
-    @apply hero-button bg-primary text-primary-foreground hover:brightness-125 hover:-translate-y-0.5 active:shadow-md;
+    @apply hero-button bg-primary text-primary-foreground shadow-lg shadow-cyan-950/30 hover:-translate-y-0.5 hover:brightness-110;
   }
 
   .hero-button-secondary {
-    @apply hero-button bg-white text-background hover:brightness-95 hover:-translate-y-0.5 active:shadow-md;
+    @apply hero-button border border-white/10 bg-white/5 text-foreground hover:-translate-y-0.5 hover:bg-white/10;
+  }
+
+  .shell-page {
+    @apply min-h-screen bg-transparent;
+  }
+
+  .shell-container {
+    @apply mx-auto max-w-6xl px-6 md:px-10;
+  }
+
+  .page-hero {
+    @apply shell-container pt-32 pb-16 md:pt-40 md:pb-20;
+  }
+
+  .eyebrow {
+    @apply mb-4 inline-flex items-center rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.28em] text-accent;
+  }
+
+  .panel {
+    @apply rounded-[1.75rem] border border-white/10 bg-white/[0.04] shadow-[0_20px_70px_rgba(3,10,18,0.35)] backdrop-blur-xl;
+  }
+
+  .panel-soft {
+    @apply rounded-[1.5rem] border border-white/10 bg-white/[0.03] backdrop-blur-xl;
+  }
+
+  .section-title {
+    @apply text-4xl font-semibold tracking-[-0.04em] text-foreground md:text-5xl;
+  }
+
+  .section-copy {
+    @apply text-base leading-8 text-muted-foreground md:text-lg;
   }
 }
-
 
