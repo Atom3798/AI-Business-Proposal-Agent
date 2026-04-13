@@ -1,59 +1,65 @@
+import { motion } from "motion/react";
+
+const cards = [
+  {
+    title: "Idea to narrative",
+    body: "Start from a rough concept and transform it into a cleaner business story with stronger framing and less guesswork.",
+    size: "lg:col-span-2"
+  },
+  {
+    title: "Audience clarity",
+    body: "Define the first customer segment before broadening the market story.",
+    size: ""
+  },
+  {
+    title: "MVP scope",
+    body: "Separate must-have capabilities from expansion ideas so the plan stays credible.",
+    size: ""
+  },
+  {
+    title: "Revenue logic",
+    body: "Connect monetization directly to product behavior and user value instead of treating it as an afterthought.",
+    size: "lg:col-span-2"
+  },
+  {
+    title: "Pitch prep",
+    body: "Package the output into a presentation-friendly structure that can be exported and revised.",
+    size: ""
+  }
+];
+
 export function FeaturesSection() {
   return (
-    <section className="py-20 md:py-32 px-6 md:px-16 bg-background/95 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto">
-        <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-            Build Faster. Ship Harder.
-          </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Our AI agent is the biggest competitive advantage for founders in the modern tech environment
+    <section className="section-shell">
+      <div className="shell-container">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.25 }}
+          transition={{ duration: 0.5 }}
+          className="mb-12 max-w-3xl"
+        >
+          <span className="eyebrow">Core capabilities</span>
+          <h2 className="section-title mt-4">A cleaner product story with a more modern AI-business layout.</h2>
+          <p className="section-copy mt-5">
+            The page now follows the same patterns used by stronger AI product sites: concise proof, modular content blocks, and bento-style visual grouping.
           </p>
-        </div>
+        </motion.div>
 
-        <div className="grid md:grid-cols-3 gap-8">
-          {[
-            {
-              icon: "⚡",
-              title: "Enterprise-Grade Planning",
-              description: "Get business plans that rival million-dollar consulting firms in seconds, not weeks"
-            },
-            {
-              icon: "🚀",
-              title: "Ship Faster",
-              description: "Skip the planning paralysis. Validate, iterate, and launch your MVP drastically faster"
-            },
-            {
-              icon: "🧠",
-              title: "AI Agent Advantage",
-              description: "Our proprietary AI understands startup dynamics and market forces like no other tool"
-            },
-            {
-              icon: "📊",
-              title: "Real-time Insights",
-              description: "Competitive analysis, market sizing, and go-to-market strategies updated in real-time"
-            },
-            {
-              icon: "🤝",
-              title: "Built for Founders",
-              description: "By founders, for founders. We understand what you need to succeed in today's tech landscape"
-            },
-            {
-              icon: "🌍",
-              title: "Global Scale",
-              description: "Used by startups across 50+ countries to raise money and build billion-dollar companies"
-            }
-          ].map((feature, idx) => (
-            <div
-              key={idx}
-              className="p-8 border border-border rounded-lg bg-background hover:bg-secondary/20 transition"
+        <div className="grid gap-5 lg:grid-cols-3">
+          {cards.map((card, index) => (
+            <motion.div
+              key={card.title}
+              initial={{ opacity: 0, y: 22 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.2 }}
+              transition={{ delay: index * 0.06, duration: 0.45 }}
+              className={`panel group p-7 transition hover:-translate-y-1 hover:border-cyan-100/20 ${card.size}`}
             >
-              <div className="text-4xl mb-4">{feature.icon}</div>
-              <h3 className="text-xl font-semibold text-foreground mb-3">
-                {feature.title}
-              </h3>
-              <p className="text-muted-foreground">{feature.description}</p>
-            </div>
+              <div className="mb-8 h-12 w-12 rounded-2xl border border-cyan-100/15 bg-gradient-to-br from-cyan-100/15 to-transparent" />
+              <h3 className="text-2xl font-semibold tracking-[-0.03em] text-foreground">{card.title}</h3>
+              <p className="mt-4 text-sm leading-7 text-muted-foreground">{card.body}</p>
+            </motion.div>
           ))}
         </div>
       </div>

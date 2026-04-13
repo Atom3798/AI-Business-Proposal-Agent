@@ -91,5 +91,25 @@
   .section-copy {
     @apply text-base leading-8 text-muted-foreground md:text-lg;
   }
-}
 
+  .grid-glow {
+    background-image:
+      linear-gradient(rgba(255,255,255,0.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.06) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at center, black 35%, transparent 90%);
+    -webkit-mask-image: radial-gradient(circle at center, black 35%, transparent 90%);
+  }
+
+  .glass-chip {
+    @apply rounded-full border border-white/10 bg-white/[0.04] px-4 py-2 text-xs font-medium tracking-[0.16em] text-slate-200 backdrop-blur-xl;
+  }
+
+  .section-shell {
+    @apply py-20 md:py-28;
+  }
+
+  .metric-value {
+    @apply text-3xl font-semibold tracking-[-0.04em] text-foreground md:text-4xl;
+  }
+}

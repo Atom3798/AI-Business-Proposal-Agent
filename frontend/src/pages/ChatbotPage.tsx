@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { Navbar } from "../components/Navbar";
+import { motion } from "motion/react";
 
 const quickPrompts = [
   "Turn this startup idea into a stronger value proposition",
@@ -47,14 +48,25 @@ export default function ChatbotPage() {
       <Navbar />
 
       <section className="page-hero">
-        <span className="eyebrow">Planning Workspace</span>
-        <h1 className="section-title mt-4">AI assistant</h1>
-        <p className="section-copy mt-5 max-w-3xl">
-          This is still a mock workspace in the current repo, but the interface now presents it like a serious planning tool rather than a casual chatbot.
-        </p>
+        <motion.div
+          initial={{ opacity: 0, y: 16 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+        >
+          <span className="eyebrow">Planning Workspace</span>
+          <h1 className="section-title mt-4">AI assistant</h1>
+          <p className="section-copy mt-5 max-w-3xl">
+            The workspace now looks more like a premium AI product surface: quieter chrome, clearer hierarchy, and motion that supports interaction.
+          </p>
+        </motion.div>
 
         <div className="mt-12 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
-          <div className="panel overflow-hidden">
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.08, duration: 0.55 }}
+            className="panel overflow-hidden"
+          >
             <div className="border-b border-white/10 px-6 py-5">
               <p className="text-xs uppercase tracking-[0.28em] text-accent">Conversation</p>
               <p className="mt-2 text-sm text-muted-foreground">
@@ -64,8 +76,11 @@ export default function ChatbotPage() {
 
             <div className="space-y-4 px-6 py-6">
               {messages.map((msg, idx) => (
-                <div
+                <motion.div
                   key={idx}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.25 }}
                   className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
                 >
                   <div
@@ -77,7 +92,7 @@ export default function ChatbotPage() {
                   >
                     {msg.content}
                   </div>
-                </div>
+                </motion.div>
               ))}
 
               {loading && (
@@ -125,23 +140,33 @@ export default function ChatbotPage() {
                 </button>
               </div>
             </div>
-          </div>
+          </motion.div>
 
           <aside className="space-y-6">
-            <div className="panel p-6">
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.14, duration: 0.5 }}
+              className="panel p-6"
+            >
               <p className="text-xs uppercase tracking-[0.28em] text-accent">Workspace status</p>
               <h2 className="mt-3 text-2xl font-semibold text-foreground">Frontend polished</h2>
               <p className="mt-4 text-sm leading-7 text-muted-foreground">
                 This screen is still using simulated responses. The next meaningful implementation step is wiring the real FastAPI generation flow into a proper planning form.
               </p>
-            </div>
+            </motion.div>
 
-            <div className="panel p-6">
+            <motion.div
+              initial={{ opacity: 0, x: 16 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2, duration: 0.5 }}
+              className="panel p-6"
+            >
               <p className="text-xs uppercase tracking-[0.28em] text-accent">Recommended next step</p>
               <p className="mt-4 text-sm leading-7 text-muted-foreground">
                 Replace the mock conversation path with the business generator form and render the saved/exportable sections using the existing plan-view components already in the repo.
               </p>
-            </div>
+            </motion.div>
           </aside>
         </div>
       </section>

@@ -1,25 +1,49 @@
+import { motion } from "motion/react";
+
+const logos = ["Founders", "Advisors", "Student Teams", "Operators"];
+
 export function AboutSection() {
   return (
-    <section className="py-20 md:py-32 px-6 md:px-16 bg-background/95 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto">
-        <div className="grid md:grid-cols-2 gap-12 items-center">
-          <div>
-            <h2 className="text-4xl md:text-5xl font-bold text-foreground mb-6">
-              Who We Are
-            </h2>
-            <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
-              We're a team of AI experts, startup founders, and business strategists building in the Bay Area—right in the heart of the tech ecosystem where the best startups are born.
-            </p>
-            <p className="text-lg text-muted-foreground mb-4 leading-relaxed">
-              Located near the world's best startup schools like Y Combinator and inside Silicon Valley's fastest-growing tech environment, we're obsessed with helping founders turn ideas into reality faster.
-            </p>
-            <p className="text-lg text-muted-foreground leading-relaxed">
-              Our AI agent is built to be the biggest tech advantage for builders—giving you enterprise-grade business planning in seconds so you can focus on shipping and scaling.
-            </p>
+    <section className="section-shell">
+      <div className="shell-container">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true, amount: 0.3 }}
+          transition={{ duration: 0.5 }}
+          className="panel p-8 md:p-10"
+        >
+          <div className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
+            <div>
+              <span className="eyebrow">Why this interface works</span>
+              <h2 className="section-title mt-4">Structured enough for serious work, light enough to move quickly.</h2>
+            </div>
+
+            <div>
+              <p className="section-copy">
+                Strong AI business products usually avoid noisy dashboards and oversized claims. The better ones make the user feel like the system is clarifying a complex workflow, not performing a gimmick.
+              </p>
+              <p className="section-copy mt-4">
+                This redesign leans into that pattern with cleaner surfaces, more disciplined spacing, calmer color contrast, and compact motion that helps guide the eye.
+              </p>
+            </div>
           </div>
 
-          <div />
-        </div>
+          <div className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {logos.map((item, index) => (
+              <motion.div
+                key={item}
+                initial={{ opacity: 0, y: 18 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: index * 0.08, duration: 0.4 }}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-4 text-center text-sm font-medium tracking-[0.18em] text-slate-200"
+              >
+                {item}
+              </motion.div>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </section>
   );

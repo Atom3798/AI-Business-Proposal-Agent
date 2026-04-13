@@ -16,6 +16,7 @@ function HomePage() {
   return (
     <div className="relative overflow-hidden">
       <div className="pointer-events-none absolute inset-0">
+        <div className="grid-glow absolute inset-x-0 top-0 h-[56rem] opacity-20" />
         <div className="absolute left-[-10%] top-16 h-72 w-72 rounded-full bg-cyan-400/10 blur-3xl" />
         <div className="absolute right-[-8%] top-48 h-96 w-96 rounded-full bg-sky-100/5 blur-3xl" />
         <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-white/20 to-transparent" />
