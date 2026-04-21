@@ -9,4 +9,13 @@ coverage
 frontend/node_modules
 frontend/dist
 PROGRESS.md
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
 
