@@ -10,7 +10,7 @@ import AboutPage from "./pages/AboutPage";
 import ProjectsPage from "./pages/ProjectsPage";
 import TeamPage from "./pages/TeamPage";
 import ContactsPage from "./pages/ContactsPage";
-import ChatbotPage from "./pages/ChatbotPage";
+import BusinessGeneratorPage from "./pages/BusinessGeneratorPage";
 
 function HomePage() {
   return (
@@ -41,8 +41,8 @@ export default function App() {
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/team" element={<TeamPage />} />
         <Route path="/contacts" element={<ContactsPage />} />
-        <Route path="/chat" element={<ChatbotPage />} />
-        <Route path="/plan" element={<ChatbotPage />} />
+        <Route path="/chat" element={<BusinessGeneratorPage />} />
+        <Route path="/plan" element={<BusinessGeneratorPage />} />
       </Routes>
     </Router>
   );
