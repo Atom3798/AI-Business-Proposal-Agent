@@ -1,11 +1,11 @@
+from dotenv import load_dotenv
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from app.models.schema import GenerateRequest, GenerateResponse
 from app.services.llm_service import generate_business_plan
-from dotenv import load_dotenv
 import os
-
-load_dotenv()
 
 app = FastAPI(
     title="AI Business Generator API",
