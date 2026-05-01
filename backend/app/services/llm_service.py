@@ -1,6 +1,6 @@
 import asyncio
 import json
-from openai import AsyncOpenAI
+import google.generativeai as genai
 import os
 from app.services.prompts import (
     SYSTEM_PROMPT,
@@ -15,25 +15,25 @@ from app.services.prompts import (
     REFINEMENT_PROMPT
 )
 
-# We're using the async OpenAI client to handle requests without blocking the rest of our app.
-client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
+# Configure the Gemini client with the API key from .env
+genai.configure(api_key=os.environ.get("GOOGLE_GEMINI_KEY"))
 
 async def call_llm(prompt: str, json_mode: bool = True) -> str:
-    """Handles the OpenAI API call, forces a structured JSON response"""
+    """Handles the Gemini API call, forces a structured JSON response"""
     try:
-        kwargs = {
-            "model": "gpt-4o",
-            "messages": [
-                {"role": "system", "content": SYSTEM_PROMPT},
-                {"role": "user", "content": prompt}
-            ],
-            "temperature": 0.7,
-        }
-        if json_mode:
-            kwargs["response_format"] = {"type": "json_object"}
+        generation_config = genai.types.GenerationConfig(
+            temperature=0.7,
+            response_mime_type="application/json" if json_mode else "text/plain"
+        )
 
-        response = await client.chat.completions.create(**kwargs)
-        return response.choices[0].message.content
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-pro",
+            system_instruction=SYSTEM_PROMPT,
+            generation_config=generation_config
+        )
+
+        response = await model.generate_content_async(prompt)
+        return response.text
     except Exception as e:
         print(f"Error calling LLM: {e}")
         raise
