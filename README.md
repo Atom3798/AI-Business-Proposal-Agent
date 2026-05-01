@@ -10,7 +10,7 @@ Joseph officially transitioned the project from a frontend prototype to a functi
 - **Full Backend Scaffolding**: Initialized a modular Python/FastAPI backend architecture to handle robust AI processing.
 - **AI Prompt-Chaining Pipeline**: Engineered a sophisticated, multi-step LLM orchestration layer that generates 7 detailed business plan sections sequentially.
 - **Core Concept Extraction Logic**: Implemented an extraction layer to distill raw user ideas into clean, structured business data for more accurate results.
-- **Async LLM Service Integration**: Wired up the OpenAI API with an asynchronous service to ensure smooth, non-blocking plan generation for a better user experience.
+- **Async LLM Service Integration**: Wired up the Google Gemini API with an asynchronous service to ensure smooth, non-blocking plan generation for a better user experience.
 - **Full-Stack Connectivity Prep**: Configured CORS and middleware to allow secure communication between the existing React frontend and new FastAPI backend.
 
 ### Updates by Joseph Esquivel
@@ -28,7 +28,7 @@ Joseph Esquivel completed the backend/LLM integration layer, connecting the pipe
 ## Tech Stack
 
 - **Frontend**: React 18, Vite, TypeScript, Tailwind CSS, `motion/react`, `lucide-react`
-- **Backend**: Python 3.10+, FastAPI, Uvicorn, OpenAI GPT-4o
+- **Backend**: Python 3.10+, FastAPI, Uvicorn, Google Gemini 1.5 Pro
 - **Persistence**: `localStorage` (current) and MongoDB (planned)
 
 ## Project Structure
@@ -62,7 +62,7 @@ cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 pip install -r requirements.txt
-# Add your OPENAI_API_KEY to a .env file
+# Add your GOOGLE_GEMINI_KEY to a .env file
 uvicorn app.main:app --reload
 ```
 
@@ -109,7 +109,7 @@ This is a collaborative capstone project:
     - **Frontend & UX**: Lead UI/UX design and multi-step interaction logic.
     - **Full-Stack Scaffolding**: Initialized the modular FastAPI backend architecture and CORS middleware.
     - **AI Prompt-Chaining**: Engineered the sophisticated, multi-step LLM orchestration layer for 7 detailed sections.
-    - **LLM Pipeline**: Integrated the asynchronous OpenAI service to handle non-blocking plan generation.
+    - **LLM Pipeline**: Integrated the asynchronous Google Gemini service to handle non-blocking plan generation.
     - **Core Concept Extraction**: Implemented logic to distill raw startup ideas into structured, actionable business data.
 - **Joseph Esquivel**: Backend & LLM Pipeline | Prompt Engineering, API Integration, and Refinement Logic.
 - **Teammate 2**: Evaluation & System Integration | Testing, Validation, and Performance Monitoring.
