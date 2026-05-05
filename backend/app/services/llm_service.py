@@ -1,7 +1,6 @@
 import asyncio
 import json
-from google import genai
-from google.genai import types
+import google.generativeai as genai
 import os
 from app.services.prompts import (
     SYSTEM_PROMPT,
@@ -17,22 +16,23 @@ from app.services.prompts import (
 )
 
 # Configure the Gemini client with the API key from .env
-client = genai.Client(api_key=os.environ.get("GOOGLE_GEMINI_KEY"))
+genai.configure(api_key=os.environ.get("GOOGLE_GEMINI_KEY"))
 
 async def call_llm(prompt: str, json_mode: bool = True) -> str:
     """Handles the Gemini API call, forces a structured JSON response"""
     try:
-        config = types.GenerateContentConfig(
+        generation_config = genai.types.GenerationConfig(
             temperature=0.7,
-            response_mime_type="application/json" if json_mode else "text/plain",
-            system_instruction=SYSTEM_PROMPT
+            response_mime_type="application/json" if json_mode else "text/plain"
         )
 
-        response = await client.aio.models.generate_content(
-            model="gemini-2.5-flash",
-            contents=prompt,
-            config=config
+        model = genai.GenerativeModel(
+            model_name="gemini-1.5-flash",
+            system_instruction=SYSTEM_PROMPT,
+            generation_config=generation_config
         )
+
+        response = await model.generate_content_async(prompt)
         return response.text
     except Exception as e:
         print(f"Error calling LLM: {e}")
