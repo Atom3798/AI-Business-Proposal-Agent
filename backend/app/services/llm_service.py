@@ -1,7 +1,7 @@
 import asyncio
 import json
+import google.auth
 import google.generativeai as genai
-import os
 from app.services.prompts import (
     SYSTEM_PROMPT,
     EXTRACTION_PROMPT,
@@ -15,8 +15,9 @@ from app.services.prompts import (
     REFINEMENT_PROMPT
 )
 
-# Configure the Gemini client with the API key from .env
-genai.configure(api_key=os.environ.get("GOOGLE_GEMINI_KEY"))
+# Use Application Default Credentials (ADC) for auth
+_credentials, _ = google.auth.default(scopes=["https://www.googleapis.com/auth/cloud-platform"])
+genai.configure(credentials=_credentials)
 
 async def call_llm(prompt: str, json_mode: bool = True) -> str:
     """Handles the Gemini API call, forces a structured JSON response"""
@@ -27,7 +28,7 @@ async def call_llm(prompt: str, json_mode: bool = True) -> str:
         )
 
         model = genai.GenerativeModel(
-            model_name="gemini-1.5-flash",
+            model_name="gemini-2.5-flash",
             system_instruction=SYSTEM_PROMPT,
             generation_config=generation_config
         )
