@@ -1,6 +1,8 @@
 import { Link } from "react-router-dom";
+import { useAuth } from "../utils/auth";
 
 export function Navbar() {
+  const { user, logout } = useAuth();
   const navLinks = [
     { label: "Services", path: "/services" },
     { label: "About Us", path: "/about" },
@@ -33,9 +35,26 @@ export function Navbar() {
           ))}
         </div>
 
-        <Link to="/plan" className="nav-cta">
-          Open Workspace
-        </Link>
+        <div className="flex items-center gap-3">
+          {user ? (
+            <>
+              <span className="hidden max-w-[10rem] truncate text-xs text-muted-foreground sm:inline">
+                {user.name}
+              </span>
+              <button type="button" onClick={logout} className="hero-button-secondary px-4 py-2 text-xs">
+                Log Out
+              </button>
+            </>
+          ) : (
+            <Link to="/login" className="hero-button-secondary px-4 py-2 text-xs">
+              Log In
+            </Link>
+          )}
+
+          <Link to={user ? "/plan" : "/signup"} className="nav-cta">
+            {user ? "Open Workspace" : "Sign Up"}
+          </Link>
+        </div>
       </div>
     </nav>
   );

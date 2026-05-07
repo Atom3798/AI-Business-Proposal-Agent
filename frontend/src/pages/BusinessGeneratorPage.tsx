@@ -1,16 +1,13 @@
 import { FormEvent, useEffect, useState } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { PlanHistory } from "../components/PlanHistory";
 import { PlanViewer } from "../components/PlanViewer";
 import { BusinessGeneratorForm } from "../components/business-generator/BusinessGeneratorForm";
 import { LoadingState } from "../components/business-generator/LoadingState";
-import {
-  SavedPlan,
-  generatePlanTitle,
-  getSavedPlans,
-  savePlan
-} from "../utils/storage";
-import { generateBusinessPlan } from "../utils/api";
+import { SavedPlan, generatePlanTitle } from "../utils/storage";
+import { deleteBackendPlan, generateBusinessPlan, listPlans } from "../utils/api";
+import { useAuth } from "../utils/auth";
 import { mapGenerateResponseToBusinessPlan } from "../utils/planMappers";
 
 type FormValues = {
@@ -27,22 +24,14 @@ const initialFormValues: FormValues = {
   differentiator: ""
 };
 
-function createPlanId(): string {
-  if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") {
-    return crypto.randomUUID();
-  }
-
-  return `plan-${Date.now()}`;
-}
-
 export default function BusinessGeneratorPage() {
+  const { user, token, loading: authLoading } = useAuth();
+  const location = useLocation();
   const [formValues, setFormValues] = useState<FormValues>(initialFormValues);
-  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>(() => getSavedPlans());
-  const [activePlan, setActivePlan] = useState<SavedPlan | null>(() => {
-    const plans = getSavedPlans();
-    return plans[0] ?? null;
-  });
+  const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
+  const [activePlan, setActivePlan] = useState<SavedPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isLoadingPlans, setIsLoadingPlans] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
@@ -50,6 +39,29 @@ export default function BusinessGeneratorPage() {
       setActivePlan(savedPlans[0]);
     }
   }, [activePlan, savedPlans]);
+
+  useEffect(() => {
+    async function loadPlans() {
+      if (!token) {
+        return;
+      }
+
+      setIsLoadingPlans(true);
+      setErrorMessage("");
+
+      try {
+        const plans = await listPlans(token);
+        setSavedPlans(plans);
+        setActivePlan(plans[0] ?? null);
+      } catch (error) {
+        setErrorMessage(error instanceof Error ? error.message : "Failed to load saved plans.");
+      } finally {
+        setIsLoadingPlans(false);
+      }
+    }
+
+    loadPlans();
+  }, [token]);
 
   const handleChange = (field: keyof FormValues, value: string) => {
     setFormValues((current) => ({
@@ -65,6 +77,11 @@ export default function BusinessGeneratorPage() {
       return;
     }
 
+    if (!token) {
+      setErrorMessage("Please log in before generating a plan.");
+      return;
+    }
+
     setErrorMessage("");
     setIsGenerating(true);
 
@@ -74,13 +91,13 @@ export default function BusinessGeneratorPage() {
         targetAudience: formValues.targetAudience.trim(),
         industry: formValues.industry.trim(),
         uniqueDifferentiator: formValues.differentiator.trim()
-      });
+      }, token);
 
       const mappedPlan = mapGenerateResponseToBusinessPlan(response);
       const timestamp = new Date().toISOString();
 
       const nextPlan: SavedPlan = {
-        id: createPlanId(),
+        id: response.plan_id,
         title: generatePlanTitle(formValues.startupIdea.trim()),
         startupIdea: formValues.startupIdea.trim(),
         targetAudience: formValues.targetAudience.trim(),
@@ -91,10 +108,9 @@ export default function BusinessGeneratorPage() {
         updatedAt: timestamp
       };
 
-      savePlan(nextPlan);
-
       setSavedPlans((current) => [nextPlan, ...current.filter((plan) => plan.id !== nextPlan.id)]);
       setActivePlan(nextPlan);
+      setFormValues(initialFormValues);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Something went wrong while generating the plan."
@@ -103,6 +119,36 @@ export default function BusinessGeneratorPage() {
       setIsGenerating(false);
     }
   };
+
+  const handleDeletePlan = async (plan: SavedPlan) => {
+    if (!token) {
+      return;
+    }
+
+    await deleteBackendPlan(plan.id, token);
+    setSavedPlans((current) => current.filter((item) => item.id !== plan.id));
+    setActivePlan((current) => {
+      if (current?.id !== plan.id) {
+        return current;
+      }
+      return savedPlans.find((item) => item.id !== plan.id) ?? null;
+    });
+  };
+
+  if (authLoading) {
+    return (
+      <div className="shell-page">
+        <Navbar />
+        <section className="page-hero">
+          <LoadingState />
+        </section>
+      </div>
+    );
+  }
+
+  if (!user || !token) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />;
+  }
 
   return (
     <div className="shell-page">
@@ -116,6 +162,9 @@ export default function BusinessGeneratorPage() {
             Turn a rough startup concept into a structured business plan with positioning,
             customer personas, monetization, product scope, and launch strategy.
           </p>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Signed in as {user.email}. Plans are saved to the backend local store.
+          </p>
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
@@ -128,6 +177,11 @@ export default function BusinessGeneratorPage() {
             />
 
             {isGenerating && <LoadingState />}
+            {isLoadingPlans && (
+              <div className="rounded-[1.5rem] border border-white/10 bg-white/[0.04] p-4 text-sm text-slate-300">
+                Loading saved plans...
+              </div>
+            )}
 
             {errorMessage && (
               <div className="rounded-[1.5rem] border border-red-400/30 bg-red-400/10 p-4 text-sm text-red-100">
@@ -159,11 +213,13 @@ export default function BusinessGeneratorPage() {
       {activePlan ? (
         <PlanViewer
           title={activePlan.title}
+          planId={activePlan.id}
           idea={activePlan.startupIdea}
           audience={activePlan.targetAudience}
           industry={activePlan.industry}
           differentiator={activePlan.differentiator}
           plan={activePlan.plan}
+          token={token}
         />
       ) : (
         <section className="mx-auto max-w-6xl px-6 pb-8">
@@ -173,7 +229,7 @@ export default function BusinessGeneratorPage() {
         </section>
       )}
 
-      <PlanHistory plans={savedPlans} onViewPlan={setActivePlan} />
+      <PlanHistory plans={savedPlans} onViewPlan={setActivePlan} onDeletePlan={handleDeletePlan} />
     </div>
   );
 }

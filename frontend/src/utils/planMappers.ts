@@ -1,4 +1,4 @@
-import { BusinessPlan } from "./storage";
+import { BusinessPlan, SavedPlan } from "./storage";
 
 export type GeneratePlanPayload = {
   startupIdea: string;
@@ -31,8 +31,8 @@ type Persona = {
 
 type Competitor = {
   type_or_name?: string;
-  strengths?: string[];
-  weaknesses?: string[];
+  strengths?: string[] | string;
+  weaknesses?: string[] | string;
   our_advantage?: string;
 };
 
@@ -65,26 +65,39 @@ type PitchDeckSlide = {
 };
 
 export type GeneratePlanResponse = {
-  core_concept: CoreConcept;
-  value_proposition: ValueProposition;
-  customer_personas: {
-    personas?: Persona[];
+  plan_id: string;
+  generated_sections: {
+    core_components?: CoreConcept;
+    value_proposition?: ValueProposition;
+    customer_personas?: {
+      personas?: Persona[];
+    };
+    competitive_analysis?: {
+      competitors?: Competitor[];
+    };
+    revenue_model?: RevenueModel;
+    mvp_feature_list?: MvpFeatures;
+    go_to_market_strategy?: {
+      channels?: GtmChannel[];
+    };
   };
-  competitive_analysis: {
-    competitors?: Competitor[];
-  };
-  revenue_model: RevenueModel;
-  mvp_features: MvpFeatures;
-  gtm_strategy: {
-    channels?: GtmChannel[];
-  };
-  pitch_deck: {
+  refined_plan: Record<string, unknown>;
+  pitch_deck_outline: {
     slides?: PitchDeckSlide[];
+  };
+  validation_result: {
+    complete: boolean;
+    missing_sections: string[];
+    warnings: string[];
   };
 };
 
-function formatList(items: string[] | undefined): string {
-  return items && items.length > 0 ? items.join(", ") : "Not specified";
+function formatList(items: string[] | string | undefined): string {
+  if (Array.isArray(items)) {
+    return items.length > 0 ? items.join(", ") : "Not specified";
+  }
+
+  return items || "Not specified";
 }
 
 function formatRevenueStream(label: string, stream: RevenueStream | undefined): string {
@@ -104,15 +117,16 @@ function withFallback(items: string[], fallback: string): string[] {
 }
 
 export function mapGenerateResponseToBusinessPlan(response: GeneratePlanResponse): BusinessPlan {
+  const sections = response.generated_sections;
   const valueProposition = [
-    response.value_proposition.tagline && `Tagline: ${response.value_proposition.tagline}`,
-    response.value_proposition.description
+    sections.value_proposition?.tagline && `Tagline: ${sections.value_proposition.tagline}`,
+    sections.value_proposition?.description
   ]
     .filter(Boolean)
     .join("\n\n");
 
   const customerPersonas = withFallback(
-    (response.customer_personas.personas ?? []).map((persona, index) => {
+    (sections.customer_personas?.personas ?? []).map((persona, index) => {
       const name = persona.name ?? `Persona ${index + 1}`;
       const role = persona.role ? ` (${persona.role})` : "";
 
@@ -128,7 +142,7 @@ export function mapGenerateResponseToBusinessPlan(response: GeneratePlanResponse
   );
 
   const competitiveAnalysis = withFallback(
-    (response.competitive_analysis.competitors ?? []).map((competitor, index) =>
+    (sections.competitive_analysis?.competitors ?? []).map((competitor, index) =>
       [
         competitor.type_or_name ?? `Competitor archetype ${index + 1}`,
         `Strengths: ${formatList(competitor.strengths)}`,
@@ -140,21 +154,21 @@ export function mapGenerateResponseToBusinessPlan(response: GeneratePlanResponse
   );
 
   const revenueModel = [
-    formatRevenueStream("Primary", response.revenue_model.primary_stream),
-    formatRevenueStream("Secondary", response.revenue_model.secondary_stream),
-    `Rationale: ${response.revenue_model.rationale ?? "Not specified"}`
+    formatRevenueStream("Primary", sections.revenue_model?.primary_stream),
+    formatRevenueStream("Secondary", sections.revenue_model?.secondary_stream),
+    `Rationale: ${sections.revenue_model?.rationale ?? "Not specified"}`
   ].join("\n\n");
 
   const mvpFeatures = withFallback(
     [
-      ...(response.mvp_features.must_have ?? []).map((feature) => `Must-have: ${feature}`),
-      ...(response.mvp_features.nice_to_have ?? []).map((feature) => `Nice-to-have: ${feature}`)
+      ...(sections.mvp_feature_list?.must_have ?? []).map((feature) => `Must-have: ${feature}`),
+      ...(sections.mvp_feature_list?.nice_to_have ?? []).map((feature) => `Nice-to-have: ${feature}`)
     ],
     "No MVP features were returned."
   );
 
   const goToMarketStrategy = withFallback(
-    (response.gtm_strategy.channels ?? []).map((channel, index) =>
+    (sections.go_to_market_strategy?.channels ?? []).map((channel, index) =>
       [
         `${channel.channel_name ?? `Channel ${index + 1}`}`,
         `Target audience: ${channel.target_audience ?? "Not specified"}`,
@@ -165,7 +179,7 @@ export function mapGenerateResponseToBusinessPlan(response: GeneratePlanResponse
   );
 
   const pitchDeckOutline = withFallback(
-    (response.pitch_deck.slides ?? []).map((slide, index) => {
+    (response.pitch_deck_outline.slides ?? []).map((slide, index) => {
       const slideNumber = slide.slide_number ?? index + 1;
       return `Slide ${slideNumber}: ${slide.title ?? "Untitled"}\n${slide.key_message ?? "No key message provided."}`;
     }),
@@ -180,5 +194,48 @@ export function mapGenerateResponseToBusinessPlan(response: GeneratePlanResponse
     mvpFeatures,
     goToMarketStrategy,
     pitchDeckOutline
+  };
+}
+
+type BackendPlan = {
+  id?: string;
+  _id?: string;
+  startup_idea?: string;
+  target_audience?: string;
+  industry?: string;
+  unique_differentiator?: string;
+  created_at?: string;
+  updated_at?: string;
+  generated_sections?: GeneratePlanResponse["generated_sections"];
+  refined_plan?: Record<string, unknown>;
+  pitch_deck_outline?: GeneratePlanResponse["pitch_deck_outline"];
+  validation_result?: GeneratePlanResponse["validation_result"];
+};
+
+export function mapBackendPlanToSavedPlan(rawPlan: unknown): SavedPlan {
+  const plan = rawPlan as BackendPlan;
+  const startupIdea = plan.startup_idea ?? "";
+  const response: GeneratePlanResponse = {
+    plan_id: plan.id ?? plan._id ?? "",
+    generated_sections: plan.generated_sections ?? {},
+    refined_plan: plan.refined_plan ?? {},
+    pitch_deck_outline: plan.pitch_deck_outline ?? {},
+    validation_result: plan.validation_result ?? {
+      complete: true,
+      missing_sections: [],
+      warnings: []
+    }
+  };
+
+  return {
+    id: response.plan_id,
+    title: `${startupIdea.split(" ").slice(0, 4).join(" ") || "Untitled"} Plan`,
+    startupIdea,
+    targetAudience: plan.target_audience ?? "",
+    industry: plan.industry ?? "",
+    differentiator: plan.unique_differentiator ?? "",
+    plan: mapGenerateResponseToBusinessPlan(response),
+    createdAt: plan.created_at ?? new Date().toISOString(),
+    updatedAt: plan.updated_at ?? plan.created_at ?? new Date().toISOString()
   };
 }

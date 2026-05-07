@@ -11,6 +11,8 @@ import ProjectsPage from "./pages/ProjectsPage";
 import TeamPage from "./pages/TeamPage";
 import ContactsPage from "./pages/ContactsPage";
 import BusinessGeneratorPage from "./pages/BusinessGeneratorPage";
+import AuthPage from "./pages/AuthPage";
+import { AuthProvider } from "./utils/auth";
 
 function HomePage() {
   return (
@@ -34,16 +36,20 @@ function HomePage() {
 export default function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/services" element={<ServicesPage />} />
-        <Route path="/about" element={<AboutPage />} />
-        <Route path="/projects" element={<ProjectsPage />} />
-        <Route path="/team" element={<TeamPage />} />
-        <Route path="/contacts" element={<ContactsPage />} />
-        <Route path="/chat" element={<BusinessGeneratorPage />} />
-        <Route path="/plan" element={<BusinessGeneratorPage />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<HomePage />} />
+          <Route path="/services" element={<ServicesPage />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/projects" element={<ProjectsPage />} />
+          <Route path="/team" element={<TeamPage />} />
+          <Route path="/contacts" element={<ContactsPage />} />
+          <Route path="/login" element={<AuthPage mode="login" />} />
+          <Route path="/signup" element={<AuthPage mode="signup" />} />
+          <Route path="/chat" element={<BusinessGeneratorPage />} />
+          <Route path="/plan" element={<BusinessGeneratorPage />} />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }

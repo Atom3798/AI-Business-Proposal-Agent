@@ -1,13 +1,14 @@
 import { motion } from "motion/react";
 import { Trash2, Eye, Calendar } from "lucide-react";
-import { SavedPlan, deletePlan } from "../utils/storage";
+import { SavedPlan } from "../utils/storage";
 
 type PlanHistoryProps = {
   plans: SavedPlan[];
   onViewPlan: (plan: SavedPlan) => void;
+  onDeletePlan: (plan: SavedPlan) => Promise<void>;
 };
 
-export function PlanHistory({ plans, onViewPlan }: PlanHistoryProps) {
+export function PlanHistory({ plans, onViewPlan, onDeletePlan }: PlanHistoryProps) {
   if (plans.length === 0) {
     return (
       <div className="mx-auto max-w-6xl px-6 py-12 text-center">
@@ -59,10 +60,9 @@ export function PlanHistory({ plans, onViewPlan }: PlanHistoryProps) {
                   View
                 </button>
                 <button
-                  onClick={() => {
+                  onClick={async () => {
                     if (confirm(`Delete "${plan.title}"?`)) {
-                      deletePlan(plan.id);
-                      window.location.reload();
+                      await onDeletePlan(plan);
                     }
                   }}
                   className="inline-flex items-center justify-center rounded-lg border border-red-300/20 bg-red-300/5 px-3 py-2 text-sm text-red-300/60 hover:bg-red-300/10 transition"

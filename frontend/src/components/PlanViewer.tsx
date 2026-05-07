@@ -3,14 +3,17 @@ import { motion, AnimatePresence } from "motion/react";
 import { Copy, Check, ChevronDown, Download, FileJson } from "lucide-react";
 import { BusinessPlan } from "../utils/storage";
 import { downloadAsText, downloadAsJSON, copyToClipboard } from "../utils/export";
+import { downloadBackendExport, submitPlanFeedback } from "../utils/api";
 
 type PlanViewerProps = {
   title: string;
+  planId: string;
   idea: string;
   audience: string;
   industry: string;
   differentiator: string;
   plan: BusinessPlan;
+  token: string;
 };
 
 const sectionConfig = [
@@ -25,14 +28,27 @@ const sectionConfig = [
 
 export function PlanViewer({
   title,
+  planId,
   idea,
   audience,
   industry,
   differentiator,
-  plan
+  plan,
+  token
 }: PlanViewerProps) {
   const [activeTab, setActiveTab] = useState<keyof BusinessPlan>("valueProposition");
   const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+  const [feedbackError, setFeedbackError] = useState("");
+  const [feedbackLoading, setFeedbackLoading] = useState(false);
+  const [feedback, setFeedback] = useState({
+    clarity_score: 5,
+    coherence_score: 5,
+    completeness_score: 5,
+    feasibility_score: 4,
+    usefulness_score: 5,
+    comments: ""
+  });
 
   const handleCopy = async (text: string, index: number) => {
     try {
@@ -47,6 +63,29 @@ export function PlanViewer({
   const currentSection = sectionConfig.find((s) => s.key === activeTab);
   const content = plan[activeTab];
   const items = Array.isArray(content) ? content : [content];
+  const scoreFields = [
+    ["clarity_score", "Clarity"],
+    ["coherence_score", "Coherence"],
+    ["completeness_score", "Completeness"],
+    ["feasibility_score", "Feasibility"],
+    ["usefulness_score", "Usefulness"]
+  ] as const;
+
+  const handleFeedbackSubmit = async () => {
+    setFeedbackLoading(true);
+    setFeedbackMessage("");
+    setFeedbackError("");
+
+    try {
+      await submitPlanFeedback(planId, token, feedback);
+      setFeedbackMessage("Feedback saved.");
+      setFeedback((current) => ({ ...current, comments: "" }));
+    } catch (error) {
+      setFeedbackError(error instanceof Error ? error.message : "Failed to save feedback.");
+    } finally {
+      setFeedbackLoading(false);
+    }
+  };
 
   return (
     <motion.section
@@ -75,6 +114,20 @@ export function PlanViewer({
 
       {/* Export buttons */}
       <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => downloadBackendExport(planId, "pdf", token)}
+          className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition"
+        >
+          <Download size={16} />
+          Export PDF
+        </button>
+        <button
+          onClick={() => downloadBackendExport(planId, "docx", token)}
+          className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition"
+        >
+          <Download size={16} />
+          Export DOCX
+        </button>
         <button
           onClick={() => downloadAsText(title, idea, audience, industry, differentiator, plan)}
           className="inline-flex items-center gap-2 rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm font-medium text-white hover:bg-white/10 transition"
@@ -156,6 +209,61 @@ export function PlanViewer({
             </motion.div>
           </AnimatePresence>
         </div>
+      </div>
+
+      <div className="rounded-xl border border-white/10 bg-white/[0.02] p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.28em] text-accent">Evaluation</p>
+            <h3 className="mt-2 text-2xl font-bold text-white">Rate this draft</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Scores are saved to the backend feedback summary.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={handleFeedbackSubmit}
+            disabled={feedbackLoading}
+            className="hero-button-primary px-5 py-2.5 text-xs disabled:cursor-not-allowed disabled:opacity-70"
+          >
+            {feedbackLoading ? "Saving..." : "Submit Feedback"}
+          </button>
+        </div>
+
+        <div className="mt-5 grid gap-3 md:grid-cols-5">
+          {scoreFields.map(([field, label]) => (
+            <label key={field} className="text-sm text-slate-300">
+              {label}
+              <select
+                value={feedback[field]}
+                onChange={(event) =>
+                  setFeedback((current) => ({
+                    ...current,
+                    [field]: Number(event.target.value)
+                  }))
+                }
+                className="mt-2 w-full rounded-xl border border-white/10 bg-slate-950/70 px-3 py-2 text-slate-50 outline-none"
+              >
+                {[1, 2, 3, 4, 5].map((score) => (
+                  <option key={score} value={score}>
+                    {score}
+                  </option>
+                ))}
+              </select>
+            </label>
+          ))}
+        </div>
+
+        <textarea
+          value={feedback.comments}
+          onChange={(event) => setFeedback((current) => ({ ...current, comments: event.target.value }))}
+          placeholder="Optional comments..."
+          rows={3}
+          className="mt-4 w-full resize-none rounded-[1.25rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-50 outline-none transition placeholder:text-slate-500 focus:border-orange-400/80 focus:ring-2 focus:ring-orange-400/30"
+        />
+
+        {feedbackMessage && <p className="mt-3 text-sm text-emerald-300">{feedbackMessage}</p>}
+        {feedbackError && <p className="mt-3 text-sm text-red-300">{feedbackError}</p>}
       </div>
     </motion.section>
   );
