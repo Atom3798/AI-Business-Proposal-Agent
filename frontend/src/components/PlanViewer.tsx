@@ -12,8 +12,19 @@ type PlanViewerProps = {
   audience: string;
   industry: string;
   differentiator: string;
+  model?: string;
   plan: BusinessPlan;
+  warnings?: string[];
   token: string;
+};
+
+const MODEL_LABELS: Record<string, string> = {
+  "meta-llama/Llama-3.3-70B-Instruct-Turbo": "Llama 3.3 70B",
+  "deepseek-ai/DeepSeek-V3": "DeepSeek V3",
+  "deepseek-ai/DeepSeek-V3-0324": "DeepSeek V3.2",
+  "deepseek-ai/DeepSeek-R1": "DeepSeek R1",
+  "moonshotai/Kimi-K2.5": "Kimi K2.5",
+  "Qwen/Qwen2.5-7B-Instruct-Turbo": "Qwen 2.5 7B",
 };
 
 const sectionConfig = [
@@ -33,7 +44,9 @@ export function PlanViewer({
   audience,
   industry,
   differentiator,
+  model,
   plan,
+  warnings,
   token
 }: PlanViewerProps) {
   const [activeTab, setActiveTab] = useState<keyof BusinessPlan>("valueProposition");
@@ -96,7 +109,22 @@ export function PlanViewer({
     >
       {/* Header */}
       <div className="space-y-4">
-        <h2 className="text-4xl font-bold text-white">{title}</h2>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-4xl font-bold text-white">{title}</h2>
+          {model && (
+            <span className="rounded-full border border-orange-400/40 bg-orange-400/10 px-3 py-1 text-xs font-medium text-orange-300">
+              {MODEL_LABELS[model] ?? model.split("/").pop()}
+            </span>
+          )}
+        </div>
+
+        {warnings && warnings.some((w) => w.includes("fallback")) && (
+          <div className="rounded-xl border border-amber-400/30 bg-amber-400/10 px-4 py-3 text-sm text-amber-200">
+            <strong>Note:</strong> Some sections used local fallback content — the AI model may not have returned valid JSON.
+            Check that your HF_TOKEN is valid and try regenerating.
+          </div>
+        )}
+
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 text-sm">
           {[
             { label: "Idea", value: idea.slice(0, 40) + "..." },

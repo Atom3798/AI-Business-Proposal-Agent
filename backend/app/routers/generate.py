@@ -20,7 +20,7 @@ async def generate_business_plan(
     current_user: dict = Depends(get_current_user),
 ):
     store = get_storage()
-    generation_result = await generate_business_plan_chain(payload)
+    generation_result = await generate_business_plan_chain(payload, model=payload.model)
     generation_steps = generation_result.pop("_steps", [])
 
     now = utc_now()

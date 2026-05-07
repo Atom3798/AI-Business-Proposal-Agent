@@ -15,6 +15,7 @@ class Settings(BaseSettings):
         default=1440, alias="ACCESS_TOKEN_EXPIRE_MINUTES"
     )
     gemini_api_key: str = Field(default="", alias="GEMINI_API_KEY")
+    hf_token: str = Field(default="", alias="HF_TOKEN")
     frontend_origin: str = Field(
         default="http://localhost:5173", alias="FRONTEND_ORIGIN"
     )

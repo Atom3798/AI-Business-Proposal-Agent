@@ -5,7 +5,9 @@ export type SavedPlan = {
   targetAudience: string;
   industry: string;
   differentiator: string;
+  model?: string;
   plan: BusinessPlan;
+  warnings?: string[];
   createdAt: string;
   updatedAt: string;
 };

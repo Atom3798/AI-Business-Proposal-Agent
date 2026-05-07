@@ -1,4 +1,4 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { Navbar } from "../components/Navbar";
 import { PlanHistory } from "../components/PlanHistory";
@@ -27,7 +27,9 @@ const initialFormValues: FormValues = {
 export default function BusinessGeneratorPage() {
   const { user, token, loading: authLoading } = useAuth();
   const location = useLocation();
+  const planViewerRef = useRef<HTMLDivElement>(null);
   const [formValues, setFormValues] = useState<FormValues>(initialFormValues);
+  const [selectedModel, setSelectedModel] = useState("meta-llama/Llama-3.3-70B-Instruct-Turbo");
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [activePlan, setActivePlan] = useState<SavedPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -90,7 +92,8 @@ export default function BusinessGeneratorPage() {
         startupIdea: formValues.startupIdea.trim(),
         targetAudience: formValues.targetAudience.trim(),
         industry: formValues.industry.trim(),
-        uniqueDifferentiator: formValues.differentiator.trim()
+        uniqueDifferentiator: formValues.differentiator.trim(),
+        model: selectedModel
       }, token);
 
       const mappedPlan = mapGenerateResponseToBusinessPlan(response);
@@ -103,7 +106,9 @@ export default function BusinessGeneratorPage() {
         targetAudience: formValues.targetAudience.trim(),
         industry: formValues.industry.trim(),
         differentiator: formValues.differentiator.trim(),
+        model: selectedModel,
         plan: mappedPlan,
+        warnings: response.validation_result?.warnings,
         createdAt: timestamp,
         updatedAt: timestamp
       };
@@ -111,6 +116,7 @@ export default function BusinessGeneratorPage() {
       setSavedPlans((current) => [nextPlan, ...current.filter((plan) => plan.id !== nextPlan.id)]);
       setActivePlan(nextPlan);
       setFormValues(initialFormValues);
+      setTimeout(() => planViewerRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }), 100);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : "Something went wrong while generating the plan."
@@ -171,8 +177,10 @@ export default function BusinessGeneratorPage() {
           <div className="space-y-6">
             <BusinessGeneratorForm
               formValues={formValues}
+              selectedModel={selectedModel}
               isGenerating={isGenerating}
               onChange={handleChange}
+              onModelChange={setSelectedModel}
               onSubmit={handleSubmit}
             />
 
@@ -210,24 +218,28 @@ export default function BusinessGeneratorPage() {
         </div>
       </section>
 
-      {activePlan ? (
-        <PlanViewer
-          title={activePlan.title}
-          planId={activePlan.id}
-          idea={activePlan.startupIdea}
-          audience={activePlan.targetAudience}
-          industry={activePlan.industry}
-          differentiator={activePlan.differentiator}
-          plan={activePlan.plan}
-          token={token}
-        />
-      ) : (
-        <section className="mx-auto max-w-6xl px-6 pb-8">
-          <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-8 text-slate-300 shadow-premium backdrop-blur-xl">
-            Generated plans will appear here after the first successful request.
-          </div>
-        </section>
-      )}
+      <div ref={planViewerRef}>
+        {activePlan ? (
+          <PlanViewer
+            title={activePlan.title}
+            planId={activePlan.id}
+            idea={activePlan.startupIdea}
+            audience={activePlan.targetAudience}
+            industry={activePlan.industry}
+            differentiator={activePlan.differentiator}
+            model={activePlan.model}
+            plan={activePlan.plan}
+            warnings={activePlan.warnings}
+            token={token}
+          />
+        ) : (
+          <section className="mx-auto max-w-6xl px-6 pb-8">
+            <div className="rounded-[1.75rem] border border-white/10 bg-white/[0.04] p-8 text-slate-300 shadow-premium backdrop-blur-xl">
+              Generated plans will appear here after the first successful request.
+            </div>
+          </section>
+        )}
+      </div>
 
       <PlanHistory plans={savedPlans} onViewPlan={setActivePlan} onDeletePlan={handleDeletePlan} />
     </div>

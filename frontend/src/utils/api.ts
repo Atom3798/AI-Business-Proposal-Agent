@@ -49,7 +49,8 @@ export async function generateBusinessPlan(
       startup_idea: payload.startupIdea,
       target_audience: payload.targetAudience,
       industry: payload.industry,
-      unique_differentiator: payload.uniqueDifferentiator
+      unique_differentiator: payload.uniqueDifferentiator,
+      model: payload.model
     })
   });
 }

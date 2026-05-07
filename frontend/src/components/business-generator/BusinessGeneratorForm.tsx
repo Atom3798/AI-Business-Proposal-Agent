@@ -1,3 +1,12 @@
+const HF_MODELS = [
+  { id: "meta-llama/Llama-3.3-70B-Instruct-Turbo", label: "Llama 3.3 70B" },
+  { id: "deepseek-ai/DeepSeek-V3", label: "DeepSeek V3" },
+  { id: "deepseek-ai/DeepSeek-V3-0324", label: "DeepSeek V3.2" },
+  { id: "deepseek-ai/DeepSeek-R1", label: "DeepSeek R1" },
+  { id: "moonshotai/Kimi-K2.5", label: "Kimi K2.5" },
+  { id: "Qwen/Qwen2.5-7B-Instruct-Turbo", label: "Qwen 2.5 7B" },
+];
+
 type FormValues = {
   startupIdea: string;
   targetAudience: string;
@@ -7,8 +16,10 @@ type FormValues = {
 
 type BusinessGeneratorFormProps = {
   formValues: FormValues;
+  selectedModel: string;
   isGenerating: boolean;
   onChange: (field: keyof FormValues, value: string) => void;
+  onModelChange: (model: string) => void;
   onSubmit: (event: React.FormEvent<HTMLFormElement>) => void;
 };
 
@@ -36,8 +47,10 @@ const optionalFields: Array<{
 
 export function BusinessGeneratorForm({
   formValues,
+  selectedModel,
   isGenerating,
   onChange,
+  onModelChange,
   onSubmit
 }: BusinessGeneratorFormProps) {
   return (
@@ -77,6 +90,27 @@ export function BusinessGeneratorForm({
               />
             </div>
           ))}
+        </div>
+
+        <div>
+          <label htmlFor="modelSelect" className="mb-2 block text-sm font-medium text-slate-200">
+            Choose AI Model
+          </label>
+          <select
+            id="modelSelect"
+            value={selectedModel}
+            onChange={(e) => onModelChange(e.target.value)}
+            className="w-full rounded-[1.25rem] border border-white/10 bg-slate-950/70 px-4 py-3 text-slate-50 outline-none transition focus:border-orange-400/80 focus:ring-2 focus:ring-orange-400/30 appearance-none cursor-pointer"
+          >
+            {HF_MODELS.map(({ id, label }) => (
+              <option key={id} value={id} className="bg-slate-900 text-slate-50">
+                {label}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1.5 text-xs text-slate-500">
+            Powered by Hugging Face Inference API
+          </p>
         </div>
 
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">

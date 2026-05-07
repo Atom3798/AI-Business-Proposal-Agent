@@ -2,8 +2,10 @@ import json
 from typing import Any, Callable, Optional
 
 import google.generativeai as genai
+import httpx
 
 from app.config import settings
+from app.schemas import ALLOWED_MODELS
 
 
 SYSTEM_PROMPT = """You are an expert startup advisor and business strategist.
@@ -94,12 +96,69 @@ Return JSON with keys:
 disclaimer, executive_summary, refined_sections, consistency_notes."""
 
 
-async def generate_with_llm(prompt: str) -> str:
-    if not _has_real_gemini_key():
-        raise RuntimeError("GEMINI_API_KEY is not configured")
+_HF_SYSTEM_SUFFIX = "\nIMPORTANT: Return ONLY valid JSON — no markdown fences, no explanation, no extra text."
 
+_MODEL_PROVIDER: dict[str, str] = {
+    "meta-llama/Llama-3.3-70B-Instruct-Turbo": "together",
+    "deepseek-ai/DeepSeek-V3": "together",
+    "deepseek-ai/DeepSeek-R1": "together",
+    "moonshotai/Kimi-K2.5": "together",
+    "Qwen/Qwen2.5-7B-Instruct-Turbo": "together",
+    "deepseek-ai/DeepSeek-V3-0324": "hyperbolic",
+}
+
+
+def _hf_url(model_id: str) -> str:
+    provider = _MODEL_PROVIDER.get(model_id, "together")
+    return f"https://router.huggingface.co/{provider}/v1/chat/completions"
+
+
+async def generate_with_llm(
+    prompt: str, model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+) -> str:
+    if model in ALLOWED_MODELS:
+        return await _generate_with_hf(prompt, model)
+    if _has_real_gemini_key():
+        return await _generate_with_gemini(prompt)
+    raise RuntimeError("No LLM backend is configured (set HF_TOKEN or GEMINI_API_KEY)")
+
+
+async def _generate_with_hf(prompt: str, model_id: str) -> str:
+    if not _has_real_hf_token():
+        raise RuntimeError("HF_TOKEN is not configured")
+
+    payload = {
+        "model": model_id,
+        "messages": [
+            {"role": "system", "content": SYSTEM_PROMPT + _HF_SYSTEM_SUFFIX},
+            {"role": "user", "content": prompt},
+        ],
+        "max_tokens": 4096,
+        "temperature": 0.65,
+    }
+    headers = {
+        "Authorization": f"Bearer {settings.hf_token}",
+        "Content-Type": "application/json",
+    }
+
+    async with httpx.AsyncClient(timeout=120.0) as client:
+        response = await client.post(_hf_url(model_id), json=payload, headers=headers)
+        if response.status_code != 200:
+            raise RuntimeError(
+                f"HF API error {response.status_code}: {response.text[:300]}"
+            )
+        data = response.json()
+        content = data["choices"][0]["message"]["content"]
+        # DeepSeek-R1 wraps output in <think>...</think> — strip reasoning before JSON
+        if "<think>" in content:
+            end = content.rfind("</think>")
+            content = content[end + len("</think>"):].strip() if end != -1 else content
+        return content
+
+
+async def _generate_with_gemini(prompt: str) -> str:
     genai.configure(api_key=settings.gemini_api_key)
-    model = genai.GenerativeModel(
+    gemini_model = genai.GenerativeModel(
         model_name="gemini-2.5-flash",
         system_instruction=SYSTEM_PROMPT,
         generation_config=genai.types.GenerationConfig(
@@ -107,8 +166,13 @@ async def generate_with_llm(prompt: str) -> str:
             response_mime_type="application/json",
         ),
     )
-    response = await model.generate_content_async(prompt)
+    response = await gemini_model.generate_content_async(prompt)
     return response.text
+
+
+def _has_real_hf_token() -> bool:
+    token = settings.hf_token.strip()
+    return bool(token and token.lower() not in {"your_token_here", "change_me", "none", "null"})
 
 
 def _has_real_gemini_key() -> bool:
@@ -116,7 +180,9 @@ def _has_real_gemini_key() -> bool:
     return bool(key and key.lower() not in {"your_key_here", "change_me", "none", "null"})
 
 
-async def generate_business_plan_chain(input_data: Any) -> dict[str, Any]:
+async def generate_business_plan_chain(
+    input_data: Any, model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+) -> dict[str, Any]:
     payload = _input_to_dict(input_data)
     steps: list[dict[str, str]] = []
 
@@ -125,6 +191,7 @@ async def generate_business_plan_chain(input_data: Any) -> dict[str, Any]:
         CORE_COMPONENTS_PROMPT.format(**payload),
         lambda: _fallback_core_components(payload),
         steps,
+        model,
     )
     core_components_json = json.dumps(core_components, indent=2)
 
@@ -133,30 +200,35 @@ async def generate_business_plan_chain(input_data: Any) -> dict[str, Any]:
         VALUE_PROPOSITION_PROMPT.format(core_components=core_components_json),
         lambda: _fallback_value_proposition(core_components),
         steps,
+        model,
     )
     customer_personas = await _run_step(
         "customer_personas",
         CUSTOMER_PERSONAS_PROMPT.format(core_components=core_components_json),
         lambda: _fallback_customer_personas(core_components),
         steps,
+        model,
     )
     competitive_analysis = await _run_step(
         "competitive_analysis",
         COMPETITIVE_ANALYSIS_PROMPT.format(core_components=core_components_json),
         lambda: _fallback_competitive_analysis(core_components),
         steps,
+        model,
     )
     revenue_model = await _run_step(
         "revenue_model",
         REVENUE_MODEL_PROMPT.format(core_components=core_components_json),
         lambda: _fallback_revenue_model(core_components),
         steps,
+        model,
     )
     mvp_feature_list = await _run_step(
         "mvp_feature_list",
         MVP_FEATURE_LIST_PROMPT.format(core_components=core_components_json),
         lambda: _fallback_mvp_features(core_components),
         steps,
+        model,
     )
 
     personas_json = json.dumps(customer_personas, indent=2)
@@ -168,6 +240,7 @@ async def generate_business_plan_chain(input_data: Any) -> dict[str, Any]:
         ),
         lambda: _fallback_gtm_strategy(core_components),
         steps,
+        model,
     )
 
     generated_sections = {
@@ -189,10 +262,11 @@ async def generate_business_plan_chain(input_data: Any) -> dict[str, Any]:
         PITCH_DECK_PROMPT.format(draft_plan=json.dumps(draft_plan, indent=2)),
         lambda: _fallback_pitch_deck(generated_sections),
         steps,
+        model,
     )
     draft_plan["pitch_deck_outline"] = pitch_deck_outline
 
-    refinement = await refine_and_validate_plan(draft_plan, steps=steps)
+    refinement = await refine_and_validate_plan(draft_plan, steps=steps, model=model)
 
     return {
         "generated_sections": generated_sections,
@@ -204,7 +278,9 @@ async def generate_business_plan_chain(input_data: Any) -> dict[str, Any]:
 
 
 async def refine_and_validate_plan(
-    plan_data: dict[str, Any], steps: Optional[list[dict[str, str]]] = None
+    plan_data: dict[str, Any],
+    steps: Optional[list[dict[str, str]]] = None,
+    model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
 ) -> dict[str, Any]:
     local_steps = steps if steps is not None else []
     refined_plan = await _run_step(
@@ -212,6 +288,7 @@ async def refine_and_validate_plan(
         REFINEMENT_PROMPT.format(draft_plan=json.dumps(plan_data, indent=2)),
         lambda: _fallback_refined_plan(plan_data),
         local_steps,
+        model,
     )
 
     validation_result = _validate_plan(plan_data, refined_plan)
@@ -226,9 +303,10 @@ async def _run_step(
     prompt: str,
     fallback_factory: Callable[[], dict[str, Any]],
     steps: list[dict[str, str]],
+    model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
 ) -> dict[str, Any]:
     try:
-        raw_output = await generate_with_llm(prompt)
+        raw_output = await generate_with_llm(prompt, model)
         output = _parse_json(raw_output)
     except Exception as exc:
         output = fallback_factory()
@@ -250,14 +328,33 @@ async def _run_step(
 
 def _parse_json(raw_output: str) -> dict[str, Any]:
     cleaned = raw_output.strip()
-    if cleaned.startswith("```json"):
-        cleaned = cleaned.removeprefix("```json").removesuffix("```").strip()
-    elif cleaned.startswith("```"):
-        cleaned = cleaned.removeprefix("```").removesuffix("```").strip()
-    parsed = json.loads(cleaned)
-    if not isinstance(parsed, dict):
-        raise ValueError("LLM response must be a JSON object")
-    return parsed
+
+    # Strip markdown code fences (```json ... ``` or ``` ... ```)
+    if cleaned.startswith("```"):
+        end = cleaned.rfind("```", 3)
+        inner = cleaned[3:end] if end > 3 else cleaned[3:]
+        cleaned = inner.lstrip("json").strip()
+
+    # Try direct parse first
+    try:
+        parsed = json.loads(cleaned)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+
+    # Fall back: extract the first {...} block from the response
+    start = cleaned.find("{")
+    end = cleaned.rfind("}")
+    if start != -1 and end > start:
+        try:
+            parsed = json.loads(cleaned[start : end + 1])
+            if isinstance(parsed, dict):
+                return parsed
+        except json.JSONDecodeError:
+            pass
+
+    raise ValueError(f"Could not extract JSON object from LLM response: {cleaned[:200]!r}")
 
 
 def _input_to_dict(input_data: Any) -> dict[str, str]:
@@ -454,10 +551,22 @@ def _validate_plan(
         section for section in required_sections if not generated_sections.get(section)
     ]
 
+    fallback_sections = [
+        section
+        for section in required_sections
+        if isinstance(generated_sections.get(section), dict)
+        and "generation_note" in generated_sections[section]
+    ]
+
     warnings = [
         "This is an AI-generated draft and should not be treated as verified market research.",
         "Do not use market size, revenue, or adoption claims until validated with real data.",
     ]
+    if fallback_sections:
+        warnings.append(
+            f"Local fallback content was used for: {', '.join(fallback_sections)}. "
+            "Check that HF_TOKEN is set and the selected model is available."
+        )
     if not refined_plan.get("disclaimer"):
         warnings.append("Refined plan did not include an explicit AI-generated draft disclaimer.")
 

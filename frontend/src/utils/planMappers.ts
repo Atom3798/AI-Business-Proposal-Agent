@@ -5,6 +5,7 @@ export type GeneratePlanPayload = {
   targetAudience: string;
   industry: string;
   uniqueDifferentiator: string;
+  model: string;
   refine?: boolean;
 };
 
