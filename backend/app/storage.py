@@ -116,7 +116,7 @@ class LocalJsonStorage(Storage):
 
     async def list_user_plans(self, user_id: str) -> list[dict[str, Any]]:
         plans = [plan for plan in self.data["plans"] if plan.get("user_id") == user_id]
-        return sorted(plans, key=lambda plan: plan.get("created_at", ""), reverse=True)
+        return sorted(plans, key=lambda plan: plan.get("created_at", "1970-01-01"), reverse=True)
 
     async def get_plan_by_id(self, plan_id: str) -> Optional[dict[str, Any]]:
         return self._find_one("plans", _id=plan_id)

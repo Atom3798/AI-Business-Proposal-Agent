@@ -205,6 +205,7 @@ type BackendPlan = {
   target_audience?: string;
   industry?: string;
   unique_differentiator?: string;
+  model?: string;
   created_at?: string;
   updated_at?: string;
   generated_sections?: GeneratePlanResponse["generated_sections"];
@@ -235,6 +236,7 @@ export function mapBackendPlanToSavedPlan(rawPlan: unknown): SavedPlan {
     targetAudience: plan.target_audience ?? "",
     industry: plan.industry ?? "",
     differentiator: plan.unique_differentiator ?? "",
+    model: plan.model,
     plan: mapGenerateResponseToBusinessPlan(response),
     createdAt: plan.created_at ?? new Date().toISOString(),
     updatedAt: plan.updated_at ?? plan.created_at ?? new Date().toISOString()

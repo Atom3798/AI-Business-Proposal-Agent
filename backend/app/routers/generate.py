@@ -30,6 +30,7 @@ async def generate_business_plan(
         "target_audience": payload.target_audience,
         "industry": payload.industry,
         "unique_differentiator": payload.unique_differentiator,
+        "model": payload.model,
         "generated_sections": generation_result["generated_sections"],
         "refined_plan": generation_result["refined_plan"],
         "pitch_deck_outline": generation_result["pitch_deck_outline"],

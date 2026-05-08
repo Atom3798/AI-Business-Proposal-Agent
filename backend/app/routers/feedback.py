@@ -10,6 +10,11 @@ from app.utils import serialize_doc, utc_now
 router = APIRouter(prefix="/feedback", tags=["feedback"])
 
 
+@router.get("/summary", response_model=FeedbackSummary)
+async def feedback_summary(current_user: dict = Depends(get_current_user)):
+    return await get_storage().get_feedback_summary(current_user["id"])
+
+
 @router.post("/{plan_id}", response_model=FeedbackResponse, status_code=status.HTTP_201_CREATED)
 async def submit_feedback(
     plan_id: str,
@@ -32,8 +37,3 @@ async def submit_feedback(
     }
     saved_feedback = await store.create_feedback(feedback_doc)
     return serialize_doc(saved_feedback)
-
-
-@router.get("/summary", response_model=FeedbackSummary)
-async def feedback_summary(current_user: dict = Depends(get_current_user)):
-    return await get_storage().get_feedback_summary(current_user["id"])

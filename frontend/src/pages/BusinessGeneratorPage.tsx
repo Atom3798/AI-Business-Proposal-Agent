@@ -54,7 +54,9 @@ export default function BusinessGeneratorPage() {
       try {
         const plans = await listPlans(token);
         setSavedPlans(plans);
-        setActivePlan(plans[0] ?? null);
+        if (plans.length > 0 && !activePlan) {
+          setActivePlan(plans[0]);
+        }
       } catch (error) {
         setErrorMessage(error instanceof Error ? error.message : "Failed to load saved plans.");
       } finally {
@@ -63,7 +65,7 @@ export default function BusinessGeneratorPage() {
     }
 
     loadPlans();
-  }, [token]);
+  }, [token, activePlan]);
 
   const handleChange = (field: keyof FormValues, value: string) => {
     setFormValues((current) => ({
@@ -132,12 +134,12 @@ export default function BusinessGeneratorPage() {
     }
 
     await deleteBackendPlan(plan.id, token);
-    setSavedPlans((current) => current.filter((item) => item.id !== plan.id));
-    setActivePlan((current) => {
-      if (current?.id !== plan.id) {
-        return current;
+    setSavedPlans((current) => {
+      const filtered = current.filter((item) => item.id !== plan.id);
+      if (activePlan?.id === plan.id) {
+        setActivePlan(filtered[0] ?? null);
       }
-      return savedPlans.find((item) => item.id !== plan.id) ?? null;
+      return filtered;
     });
   };
 
