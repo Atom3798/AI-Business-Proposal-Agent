@@ -8,7 +8,7 @@ import { LoadingState } from "../components/business-generator/LoadingState";
 import { SavedPlan, generatePlanTitle } from "../utils/storage";
 import { deleteBackendPlan, generateBusinessPlan, listPlans } from "../utils/api";
 import { useAuth } from "../utils/auth";
-import { mapGenerateResponseToBusinessPlan } from "../utils/planMappers";
+import { type PanelAgentConfig, mapGenerateResponseToBusinessPlan } from "../utils/planMappers";
 
 type FormValues = {
   startupIdea: string;
@@ -30,6 +30,7 @@ export default function BusinessGeneratorPage() {
   const planViewerRef = useRef<HTMLDivElement>(null);
   const [formValues, setFormValues] = useState<FormValues>(initialFormValues);
   const [selectedModel, setSelectedModel] = useState("meta-llama/Llama-3.3-70B-Instruct-Turbo");
+  const [panelConfig, setPanelConfig] = useState<PanelAgentConfig[] | null>(null);
   const [savedPlans, setSavedPlans] = useState<SavedPlan[]>([]);
   const [activePlan, setActivePlan] = useState<SavedPlan | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -95,7 +96,8 @@ export default function BusinessGeneratorPage() {
         targetAudience: formValues.targetAudience.trim(),
         industry: formValues.industry.trim(),
         uniqueDifferentiator: formValues.differentiator.trim(),
-        model: selectedModel
+        model: selectedModel,
+        panel: panelConfig ? { agents: panelConfig } : undefined,
       }, token);
 
       const mappedPlan = mapGenerateResponseToBusinessPlan(response);
@@ -183,6 +185,7 @@ export default function BusinessGeneratorPage() {
               isGenerating={isGenerating}
               onChange={handleChange}
               onModelChange={setSelectedModel}
+              onPanelChange={setPanelConfig}
               onSubmit={handleSubmit}
             />
 

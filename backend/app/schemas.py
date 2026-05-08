@@ -1,6 +1,6 @@
-from typing import Any
+from typing import Any, Literal, Optional
 
-from pydantic import BaseModel, EmailStr, Field, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
 
 class UserCreate(BaseModel):
@@ -46,12 +46,38 @@ ALLOWED_MODELS = {
 }
 
 
+class PanelAgent(BaseModel):
+    model: str
+    role: Literal["generator", "critic", "refiner"]
+
+    @field_validator("model")
+    @classmethod
+    def validate_model(cls, value: str) -> str:
+        if value not in ALLOWED_MODELS:
+            raise ValueError(f"model must be one of: {', '.join(sorted(ALLOWED_MODELS))}")
+        return value
+
+
+class ModelPanel(BaseModel):
+    agents: list[PanelAgent] = Field(min_length=2, max_length=4)
+
+    @model_validator(mode="after")
+    def validate_roles(self) -> "ModelPanel":
+        roles = {agent.role for agent in self.agents}
+        if "generator" not in roles:
+            raise ValueError("Panel must include at least one agent with role 'generator'")
+        if "critic" not in roles:
+            raise ValueError("Panel must include at least one agent with role 'critic'")
+        return self
+
+
 class GenerateRequest(BaseModel):
     startup_idea: str = Field(min_length=3, max_length=2000)
     target_audience: str = Field(default="", max_length=1000)
     industry: str = Field(default="", max_length=500)
     unique_differentiator: str = Field(default="", max_length=1000)
     model: str = Field(default="meta-llama/Llama-3.3-70B-Instruct-Turbo")
+    panel: Optional[ModelPanel] = None
 
     @field_validator("model")
     @classmethod
@@ -73,6 +99,7 @@ class GeneratedPlanResponse(BaseModel):
     refined_plan: dict[str, Any]
     pitch_deck_outline: dict[str, Any]
     validation_result: ValidationResult
+    panel_trace: Optional[list[dict[str, Any]]] = None
 
 
 class PlansResponse(BaseModel):

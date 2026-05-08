@@ -1,5 +1,12 @@
 import { BusinessPlan, SavedPlan } from "./storage";
 
+export type PanelRole = "generator" | "critic" | "refiner";
+
+export type PanelAgentConfig = {
+  model: string;
+  role: PanelRole;
+};
+
 export type GeneratePlanPayload = {
   startupIdea: string;
   targetAudience: string;
@@ -7,6 +14,9 @@ export type GeneratePlanPayload = {
   uniqueDifferentiator: string;
   model: string;
   refine?: boolean;
+  panel?: {
+    agents: PanelAgentConfig[];
+  };
 };
 
 type CoreConcept = {
@@ -65,6 +75,17 @@ type PitchDeckSlide = {
   key_message?: string;
 };
 
+export type PanelExchange = {
+  role: PanelRole;
+  model: string;
+  output: string;
+};
+
+export type PanelStepTrace = {
+  step_name: string;
+  exchanges: PanelExchange[];
+};
+
 export type GeneratePlanResponse = {
   plan_id: string;
   generated_sections: {
@@ -91,6 +112,7 @@ export type GeneratePlanResponse = {
     missing_sections: string[];
     warnings: string[];
   };
+  panel_trace?: PanelStepTrace[];
 };
 
 function formatList(items: string[] | string | undefined): string {

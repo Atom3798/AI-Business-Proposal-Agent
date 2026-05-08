@@ -20,8 +20,17 @@ async def generate_business_plan(
     current_user: dict = Depends(get_current_user),
 ):
     store = get_storage()
-    generation_result = await generate_business_plan_chain(payload, model=payload.model)
+    generation_result = await generate_business_plan_chain(
+        payload, model=payload.model, panel=payload.panel
+    )
     generation_steps = generation_result.pop("_steps", [])
+
+    # Collect panel traces (one entry per step that has one)
+    panel_trace = [
+        {"step_name": step["step_name"], "exchanges": step["panel_trace"]}
+        for step in generation_steps
+        if "panel_trace" in step
+] or None
 
     now = utc_now()
     plan_doc = {
@@ -51,6 +60,7 @@ async def generate_business_plan(
                     "step_name": step["step_name"],
                     "prompt": step["prompt"],
                     "output": step["output"],
+                    "panel_trace": step.get("panel_trace"),
                     "created_at": now,
                 }
                 for step in generation_steps
@@ -63,4 +73,5 @@ async def generate_business_plan(
         "refined_plan": generation_result["refined_plan"],
         "pitch_deck_outline": generation_result["pitch_deck_outline"],
         "validation_result": generation_result["validation_result"],
+        "panel_trace": panel_trace,
     }

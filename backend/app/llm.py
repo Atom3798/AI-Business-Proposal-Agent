@@ -1,11 +1,14 @@
 import json
-from typing import Any, Callable, Optional
+from typing import TYPE_CHECKING, Any, Callable, Optional
 
 import google.generativeai as genai
 import httpx
 
 from app.config import settings
 from app.schemas import ALLOWED_MODELS
+
+if TYPE_CHECKING:
+    from app.schemas import ModelPanel
 
 
 SYSTEM_PROMPT = """You are an expert startup advisor and business strategist.
@@ -96,6 +99,46 @@ Return JSON with keys:
 disclaimer, executive_summary, refined_sections, consistency_notes."""
 
 
+PANEL_DEFAULTS = {
+    "generator": "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    "critic": "deepseek-ai/DeepSeek-V3",
+    "refiner": "deepseek-ai/DeepSeek-R1",
+}
+
+CRITIC_PROMPT = """CRITIC ROLE: You are reviewing the following {step_name} section from an AI-generated business plan.
+
+Original output:
+{original_output}
+
+Carefully identify:
+1. Logical gaps or inconsistencies in the reasoning
+2. Unsupported claims, hallucinated statistics, or fabricated data
+3. Missing elements that would strengthen this section
+4. Vague or overly generic content that lacks specificity
+
+Return JSON with exactly these keys:
+- issues: list of strings, each describing a specific problem found
+- suggestions: list of strings, each a concrete improvement recommendation
+- severity: string — overall quality level: "low" (minor polish needed), "medium" (several gaps), or "high" (major structural issues)"""
+
+
+REFINER_PROMPT = """REFINER ROLE: You are improving the following {step_name} section from an AI-generated business plan.
+
+Original output:
+{original_output}
+
+Critique from reviewer:
+{critique}
+
+Produce an improved version that:
+- Addresses each issue identified in the critique
+- Uses concrete, specific language (avoid generic filler)
+- Does NOT invent fake statistics or fabricated data
+- Maintains the exact same JSON structure and keys as the original output
+
+Return ONLY the improved JSON — no explanation, no markdown fences."""
+
+
 _HF_SYSTEM_SUFFIX = "\nIMPORTANT: Return ONLY valid JSON — no markdown fences, no explanation, no extra text."
 
 _MODEL_PROVIDER: dict[str, str] = {
@@ -180,11 +223,74 @@ def _has_real_gemini_key() -> bool:
     return bool(key and key.lower() not in {"your_key_here", "change_me", "none", "null"})
 
 
+async def generate_with_panel(
+    step_name: str,
+    prompt: str,
+    panel: "ModelPanel",
+) -> tuple[dict[str, Any], list[dict[str, Any]]]:
+    """Run Generator → Critic → Refiner exchange for a single plan step."""
+    agents = panel.agents
+
+    generator_model = next(
+        (a.model for a in agents if a.role == "generator"),
+        PANEL_DEFAULTS["generator"],
+    )
+    critic_agents = [a for a in agents if a.role == "critic"]
+    refiner_agents = [a for a in agents if a.role == "refiner"]
+
+    # When only 2 agents are configured, critic doubles as refiner
+    if not refiner_agents:
+        refiner_agents = critic_agents
+
+    critic_model = critic_agents[0].model
+    refiner_model = refiner_agents[0].model
+
+    trace: list[dict[str, Any]] = []
+
+    # Step 1: Generator
+    try:
+        raw_gen = await generate_with_llm(prompt, generator_model)
+        gen_output = _parse_json(raw_gen)
+    except Exception as exc:
+        gen_output = {}
+        raw_gen = f"Generator failed: {exc}"
+    trace.append({"role": "generator", "model": generator_model, "output": raw_gen})
+
+    # Step 2: Critic
+    try:
+        critic_prompt_text = CRITIC_PROMPT.format(
+            step_name=step_name,
+            original_output=json.dumps(gen_output, indent=2),
+        )
+        raw_critique = await generate_with_llm(critic_prompt_text, critic_model)
+    except Exception as exc:
+        raw_critique = json.dumps({"issues": [], "suggestions": [], "severity": "low", "error": str(exc)})
+    trace.append({"role": "critic", "model": critic_model, "output": raw_critique})
+
+    # Step 3: Refiner
+    try:
+        refiner_prompt_text = REFINER_PROMPT.format(
+            step_name=step_name,
+            original_output=json.dumps(gen_output, indent=2),
+            critique=raw_critique,
+        )
+        raw_refined = await generate_with_llm(refiner_prompt_text, refiner_model)
+        refined_output = _parse_json(raw_refined)
+    except Exception as exc:
+        refined_output = gen_output  # fall back to generator output
+        raw_refined = f"Refiner failed: {exc}"
+    trace.append({"role": "refiner", "model": refiner_model, "output": raw_refined})
+
+    return refined_output, trace
+
+
 async def generate_business_plan_chain(
-    input_data: Any, model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+    input_data: Any,
+    model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    panel: Optional["ModelPanel"] = None,
 ) -> dict[str, Any]:
     payload = _input_to_dict(input_data)
-    steps: list[dict[str, str]] = []
+    steps: list[dict[str, Any]] = []
 
     core_components = await _run_step(
         "core_components",
@@ -192,6 +298,7 @@ async def generate_business_plan_chain(
         lambda: _fallback_core_components(payload),
         steps,
         model,
+        panel,
     )
     core_components_json = json.dumps(core_components, indent=2)
 
@@ -201,6 +308,7 @@ async def generate_business_plan_chain(
         lambda: _fallback_value_proposition(core_components),
         steps,
         model,
+        panel,
     )
     customer_personas = await _run_step(
         "customer_personas",
@@ -208,6 +316,7 @@ async def generate_business_plan_chain(
         lambda: _fallback_customer_personas(core_components),
         steps,
         model,
+        panel,
     )
     competitive_analysis = await _run_step(
         "competitive_analysis",
@@ -215,6 +324,7 @@ async def generate_business_plan_chain(
         lambda: _fallback_competitive_analysis(core_components),
         steps,
         model,
+        panel,
     )
     revenue_model = await _run_step(
         "revenue_model",
@@ -222,6 +332,7 @@ async def generate_business_plan_chain(
         lambda: _fallback_revenue_model(core_components),
         steps,
         model,
+        panel,
     )
     mvp_feature_list = await _run_step(
         "mvp_feature_list",
@@ -229,6 +340,7 @@ async def generate_business_plan_chain(
         lambda: _fallback_mvp_features(core_components),
         steps,
         model,
+        panel,
     )
 
     personas_json = json.dumps(customer_personas, indent=2)
@@ -241,6 +353,7 @@ async def generate_business_plan_chain(
         lambda: _fallback_gtm_strategy(core_components),
         steps,
         model,
+        panel,
     )
 
     generated_sections = {
@@ -263,10 +376,11 @@ async def generate_business_plan_chain(
         lambda: _fallback_pitch_deck(generated_sections),
         steps,
         model,
+        panel,
     )
     draft_plan["pitch_deck_outline"] = pitch_deck_outline
 
-    refinement = await refine_and_validate_plan(draft_plan, steps=steps, model=model)
+    refinement = await refine_and_validate_plan(draft_plan, steps=steps, model=model, panel=panel)
 
     return {
         "generated_sections": generated_sections,
@@ -279,8 +393,9 @@ async def generate_business_plan_chain(
 
 async def refine_and_validate_plan(
     plan_data: dict[str, Any],
-    steps: Optional[list[dict[str, str]]] = None,
+    steps: Optional[list[dict[str, Any]]] = None,
     model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    panel: Optional["ModelPanel"] = None,
 ) -> dict[str, Any]:
     local_steps = steps if steps is not None else []
     refined_plan = await _run_step(
@@ -289,6 +404,7 @@ async def refine_and_validate_plan(
         lambda: _fallback_refined_plan(plan_data),
         local_steps,
         model,
+        panel,
     )
 
     validation_result = _validate_plan(plan_data, refined_plan)
@@ -302,27 +418,32 @@ async def _run_step(
     step_name: str,
     prompt: str,
     fallback_factory: Callable[[], dict[str, Any]],
-    steps: list[dict[str, str]],
+    steps: list[dict[str, Any]],
     model: str = "meta-llama/Llama-3.3-70B-Instruct-Turbo",
+    panel: Optional["ModelPanel"] = None,
 ) -> dict[str, Any]:
+    step_panel_trace: Optional[list[dict[str, Any]]] = None
     try:
-        raw_output = await generate_with_llm(prompt, model)
-        output = _parse_json(raw_output)
+        if panel is not None:
+            output, step_panel_trace = await generate_with_panel(step_name, prompt, panel)
+        else:
+            raw_output = await generate_with_llm(prompt, model)
+            output = _parse_json(raw_output)
     except Exception as exc:
         output = fallback_factory()
-        raw_output = json.dumps(output, indent=2)
         output.setdefault(
             "generation_note",
             f"Local fallback used because the LLM call failed: {str(exc)}",
         )
 
-    steps.append(
-        {
-            "step_name": step_name,
-            "prompt": prompt,
-            "output": json.dumps(output, indent=2),
-        }
-    )
+    step: dict[str, Any] = {
+        "step_name": step_name,
+        "prompt": prompt,
+        "output": json.dumps(output, indent=2),
+    }
+    if step_panel_trace is not None:
+        step["panel_trace"] = step_panel_trace
+    steps.append(step)
     return output
 
 
