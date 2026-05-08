@@ -125,7 +125,7 @@ That file is ignored by Git.
 
 If `GEMINI_API_KEY` is blank or left as a placeholder, the app still generates a structured local fallback draft so the project can be tested without external API access.
 
-## Test Flow
+## Test Flow (Manual)
 
 1. Start the backend.
 2. Start the frontend.
@@ -135,6 +135,86 @@ If `GEMINI_API_KEY` is blank or left as a placeholder, the app still generates a
 6. Confirm it appears in plan history.
 7. Export PDF or DOCX.
 8. Submit feedback.
+
+## Automated Tests
+
+The backend has a pytest suite covering the API, LLM pipeline, Pydantic schemas, and a live model benchmark. All fast tests run fully offline — no real API keys required.
+
+### Requirements
+
+Install the test dependencies from the `backend/` directory:
+
+```bash
+cd backend
+pip install -r requirements-test.txt
+```
+
+`requirements-test.txt` pulls in everything from `requirements.txt` plus:
+
+| Package | Version | Purpose |
+|---|---|---|
+| `pytest` | 8.3.0 | Test runner |
+| `pytest-asyncio` | 0.24.0 | Async test support |
+| `httpx` | 0.27.0 | ASGI test transport for FastAPI |
+
+### Running the Tests
+
+Run all tests (fast, offline):
+
+```bash
+cd backend
+pytest
+```
+
+Run a specific file:
+
+```bash
+pytest tests/test_api.py
+pytest tests/test_schemas.py
+pytest tests/test_llm_unit.py
+```
+
+Run a specific class or single test:
+
+```bash
+pytest tests/test_api.py::TestAuth
+pytest tests/test_api.py::TestAuth::test_login_success
+```
+
+Run with verbose output:
+
+```bash
+pytest -v
+```
+
+Run the live model benchmark (requires a real Hugging Face token):
+
+```bash
+HF_TOKEN=hf_yourtoken pytest tests/test_model_comparison.py -v -s
+```
+
+The `-s` flag is required so the comparison table prints to stdout at the end.
+
+### What Each Test File Covers
+
+**`tests/conftest.py`** — Shared fixtures used by all test files. Sets up a temporary JSON data store for each test so nothing persists between runs. Provides a `mock_llm` fixture that replaces real LLM API calls with deterministic fake responses, and an `auth_headers` fixture that registers and logs in a test user.
+
+**`tests/test_schemas.py`** — Unit tests for all Pydantic request/response models. Verifies that emails are normalized to lowercase, passwords enforce length limits, feedback scores are rejected outside the 1–5 range, unknown LLM models are rejected with a clear error, and all field length constraints are enforced.
+
+**`tests/test_llm_unit.py`** — Unit tests for the internal LLM utility functions with no network or storage involved. Covers `_parse_json` (handles plain JSON, markdown code fences, JSON buried in prose, raises on garbage input), `_input_to_dict` (accepts Pydantic models or plain dicts, fills missing keys, strips whitespace), credential sentinel checks (rejects placeholder values like `"your_token_here"` for HF and Gemini keys), all 8 fallback factory functions (verifies structural correctness — correct keys, slide count, channel count), and `_validate_plan` (flags missing sections and fallback usage).
+
+**`tests/test_api.py`** — Integration tests against the full FastAPI app using `TestClient`. LLM calls are replaced by the mock fixture. Covers:
+
+- `GET /` and `GET /health` return healthy responses
+- `POST /auth/signup` — success, duplicate email (400), invalid email/short password (422)
+- `POST /auth/login` — success, wrong password, unknown email (all 401)
+- `GET /auth/me` — returns user when authenticated, 401 without token
+- `POST /generate` — returns full plan shape, requires auth, rejects bad models, saves plan that is retrievable by ID
+- `GET /plans`, `GET /plans/{id}`, `DELETE /plans/{id}` — list, fetch, delete, 404 on missing
+- `POST /feedback/{plan_id}` — submit feedback, score out of range (422), summary aggregation
+- `POST /export/pdf/{plan_id}` and `/export/docx/{plan_id}` — correct content-type headers returned
+
+**`tests/test_model_comparison.py`** — Live benchmark test that hits real Hugging Face APIs. Auto-skips when `HF_TOKEN` is not set. Runs the full `generate_business_plan_chain` against 6 models (Llama 3.3 70B, DeepSeek V3, DeepSeek V3-0324, DeepSeek R1, Kimi K2.5, Qwen 2.5 7B) and measures wall-clock time, plan completeness, fallback usage, consistency note count, and a rough token estimate. Prints a formatted side-by-side comparison table sorted by speed at the end of the run.
 
 ## Useful Commands
 
